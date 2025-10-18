@@ -52,7 +52,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
           'playlistTitle': 'Éducation et Apprentissage',
           'image': 'assets/bve.jpg',
-          'color': Color(0xff676876),
+          'color': Color(0xff4CAF50),
         },
         {
           'title': 'Définir ses objectifs',
@@ -60,7 +60,23 @@ class _FavoritesPageState extends State<FavoritesPage> {
           'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3',
           'playlistTitle': 'Motivation et Développement',
           'image': 'assets/mame.jpg',
-          'color': Color(0xff676876),
+          'color': Color(0xff2196F3),
+        },
+        {
+          'title': 'Méditation guidée',
+          'duration': '20:45',
+          'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+          'playlistTitle': 'Religion et Spiritualité',
+          'image': 'assets/fa.jpg',
+          'color': Colors.deepOrangeAccent,
+        },
+        {
+          'title': 'Gestion du temps',
+          'duration': '25:15',
+          'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3',
+          'playlistTitle': 'Éducation et Apprentissage',
+          'image': 'assets/bve.jpg',
+          'color': Color(0xff4CAF50),
         },
       ]);
       _filteredEpisodes = _favoriteEpisodes;
@@ -155,6 +171,15 @@ class _FavoritesPageState extends State<FavoritesPage> {
               episode['playlistTitle'].toLowerCase().contains(_searchController.text.toLowerCase()))
           .toList();
     });
+    
+    // Show snackbar confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Épisode retiré des favoris'),
+        backgroundColor: Colors.deepOrangeAccent,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
   
   void _changePage(String page) {
@@ -199,7 +224,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
         );
         break;
       case 'favorites':
-        // On est déjà sur la page des favoris
         break;
       case 'profile':
         Navigator.pushReplacement(
@@ -281,66 +305,278 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.menu, color: Colors.black),
+                          icon: const Icon(Icons.menu, color: Colors.black, size: 28),
                           onPressed: () {
                             setState(() {
                               _isMenuOpen = !_isMenuOpen;
                             });
                           },
                         ),
+                        SizedBox(width: 10),
                         Row(
                           children: [
-                           Text("P", style: TextStyle(color: Colors.black, fontSize: 30)),
-                           Text("o", style: TextStyle(color: Color.fromARGB(255, 243, 147, 2), fontSize: 30)),
-                           Text("dcast", style: TextStyle(color: Colors.black, fontSize: 30)),
+                            Text("P", style: TextStyle(
+                              color: Colors.black, 
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold
+                            )),
+                            Text("o", style: TextStyle(
+                              color: Color(0xFFFF6B35), 
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold
+                            )),
+                            Text("dcast", style: TextStyle(
+                              color: Colors.black, 
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold
+                            )),
                           ],
                         ),
-                        SizedBox(width: 10), 
+                        Spacer(),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey[200],
+                          ),
+                          child: Icon(Icons.notifications_outlined, color: Colors.grey[600]),
+                        ),
                       ],
                     ),
 
-                    SizedBox(height: 40),
+                    SizedBox(height: 30),
 
-                    // Titre de la page
-                    Text(
-                      'Mes Favoris',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    // Titre et statistiques
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Mes Favoris',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrangeAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${_filteredEpisodes.length} épisodes',
+                            style: TextStyle(
+                              color: Colors.deepOrangeAccent,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     SizedBox(height: 20),
 
-                    // Liste des favoris
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: _filteredEpisodes.length,
-                      itemBuilder: (context, index) {
-                        final episode = _filteredEpisodes[index];
-                        final isCurrentEpisode = currentEpisodeIndex == index;
-                        
-                        return Card(
-                          margin: EdgeInsets.only(bottom: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage: AssetImage(episode['image']),
-                            ),
-                            title: Text(episode['title']),
-                            subtitle: Text(episode['playlistTitle']),
-                            trailing: IconButton(
-                              icon: Icon(Icons.favorite, color: Colors.red),
-                              onPressed: () => _removeFavorite(index),
-                            ),
-                            onTap: () => _playEpisode(index),
-                          ),
-                        );
-                      },
+                    // Barre de recherche
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: _filterEpisodes,
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher dans mes favoris...',
+                          hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          border: InputBorder.none,
+                          icon: Icon(Icons.search, color: Colors.grey[600], size: 20),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear, color: Colors.grey[600], size: 18),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _filterEpisodes('');
+                                  },
+                                )
+                              : null,
+                        ),
+                      ),
                     ),
+
+                    SizedBox(height: 25),
+
+                    // Liste des favoris - NOUVEAU DESIGN
+                    if (_filteredEpisodes.isEmpty)
+                      Container(
+                        height: 200,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.favorite_border,
+                              size: 64,
+                              color: Colors.grey[300],
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Aucun favori',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[500],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Ajoutez des épisodes à vos favoris',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: _filteredEpisodes.length,
+                        itemBuilder: (context, index) {
+                          final episode = _filteredEpisodes[index];
+                          final isCurrentEpisode = currentEpisodeIndex == index;
+                          
+                          return Container(
+                            margin: EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: isCurrentEpisode ? episode['color'] : Colors.grey[200]!,
+                                width: isCurrentEpisode ? 2 : 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Image de l'épisode
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    image: DecorationImage(
+                                      image: AssetImage(episode['image']),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                
+                                // Contenu de l'épisode
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        episode['title'],
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                          color: Colors.black87,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        episode['playlistTitle'],
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: episode['color'].withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              episode['duration'],
+                                              style: TextStyle(
+                                                color: episode['color'],
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          Spacer(),
+                                          // Boutons d'action
+                                          Row(
+                                            children: [
+                                              // Bouton play
+                                              GestureDetector(
+                                                onTap: () => _playEpisode(index),
+                                                child: Container(
+                                                  width: 32,
+                                                  height: 32,
+                                                  decoration: BoxDecoration(
+                                                    color: episode['color'],
+                                                    borderRadius: BorderRadius.circular(16),
+                                                  ),
+                                                  child: Icon(
+                                                    isCurrentEpisode && isPlaying ? Icons.pause : Icons.play_arrow,
+                                                    color: Colors.white,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: 8),
+                                              // Bouton supprimer
+                                              GestureDetector(
+                                                onTap: () => _removeFavorite(index),
+                                                child: Container(
+                                                  width: 32,
+                                                  height: 32,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(16),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.favorite,
+                                                    color: Colors.red,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -348,19 +584,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
           ),
           
           // Menu hamburger
-          if (_isMenuOpen)
-            HamburgerMenu(
-              currentPage: _currentPage,
-              onPageChange: _changePage,
-              isMenuOpen: _isMenuOpen,
-              onMenuToggle: (value) {
-                setState(() {
-                  _isMenuOpen = value;
-                });
-              },
-            ),
+          HamburgerMenu(
+            currentPage: _currentPage,
+            onPageChange: _changePage,
+            isMenuOpen: _isMenuOpen,
+            onMenuToggle: (value) {
+              setState(() {
+                _isMenuOpen = value;
+              });
+            },
+          ),
         ],
       ),
     );
   }
-} 
+}
