@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 
+// Import services
+import 'services/api_service.dart';
+import 'services/auth_service.dart';
+import 'repositories/category_repository.dart';
+import 'repositories/podcast_repository.dart';
+
+// Import BLoCs
+import 'bloc/auth/auth_bloc.dart';
+import 'bloc/category/category_bloc.dart';
+import 'bloc/podcast/podcast_bloc.dart';
+
 // Import des pages
+import 'login_page.dart';
 import 'home_page.dart' as home;
 import 'playlist_page.dart';
 import 'favorites_page.dart';
@@ -10,40 +23,110 @@ import 'profile_page.dart';
 import 'settings_page.dart';
 import 'about_page.dart';
 import 'widgets/hamburger_menu.dart';
+import 'bloc/auth/auth_state.dart';
+import 'bloc/auth/auth_event.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Configure l'audio session
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
-  
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key}); 
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Galsen Podcast',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.deepOrange,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: IconThemeData(color: Colors.black),
-          titleTextStyle: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+    // Initialize services
+    final apiService = ApiService();
+    final authService = AuthService(apiService);
+    final categoryRepository = CategoryRepository(apiService);
+    final podcastRepository = PodcastRepository(apiService);
+
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: apiService),
+        RepositoryProvider.value(value: authService),
+        RepositoryProvider.value(value: categoryRepository),
+        RepositoryProvider.value(value: podcastRepository),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => AuthBloc(authService),
           ),
+          BlocProvider(
+            create: (context) => CategoryBloc(categoryRepository),
+          ),
+          BlocProvider(
+            create: (context) => PodcastBloc(podcastRepository),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Galsen Podcast',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.deepOrange,
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              iconTheme: IconThemeData(color: Colors.black),
+              titleTextStyle: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          home: const AuthChecker(),
         ),
       ),
-      home: const MainScreen(),
+    );
+  }
+}
+
+// Widget pour vérifier l'authentification au démarrage
+class AuthChecker extends StatefulWidget {
+  const AuthChecker({super.key});
+
+  @override
+  State<AuthChecker> createState() => _AuthCheckerState();
+}
+
+class _AuthCheckerState extends State<AuthChecker> {
+  @override
+  void initState() {
+    super.initState();
+    // Vérifier l'authentification au démarrage
+    context.read<AuthBloc>().add(AuthCheckRequested());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthLoading || state is AuthInitial) {
+          // Afficher un splash screen pendant la vérification
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Colors.deepOrange,
+              ),
+            ),
+          );
+        }
+
+        if (state is AuthAuthenticated) {
+          return const MainScreen();
+        }
+
+        return const LoginPage();
+      },
     );
   }
 }
@@ -57,7 +140,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  
+
   final List<Widget> _pages = [
     const home.HomePage(),
     const PlaylistPage(),
