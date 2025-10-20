@@ -5,7 +5,7 @@ import 'bloc/podcast/podcast_event.dart';
 import 'bloc/podcast/podcast_state.dart';
 import 'models/category.dart';
 import 'models/podcast.dart';
-import 'podcast_detail_page.dart';
+import 'podcast_detail_with_episodes_page.dart';
 
 class CategoryPodcastsPage extends StatefulWidget {
   final Category category;
@@ -186,11 +186,11 @@ class _CategoryPodcastsPageState extends State<CategoryPodcastsPage> {
   Widget _buildPodcastCard(Podcast podcast) {
     return GestureDetector(
       onTap: () {
-        // Naviguer vers la page de détail du podcast
+        // Naviguer vers la page de détail du podcast avec les épisodes
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PodcastDetailPageWithAudio(podcast: podcast),
+            builder: (context) => PodcastDetailWithEpisodesPage(podcast: podcast),
           ),
         );
       },

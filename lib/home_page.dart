@@ -6,6 +6,7 @@ import 'playlist_page.dart';
 import 'profile_page.dart';
 import 'settings_page.dart';
 import 'about_page.dart';
+import 'admin_dashboard_page.dart';
 import 'widgets/hamburger_menu.dart';
 import 'bloc/category/category_bloc.dart';
 import 'bloc/category/category_event.dart';
@@ -92,6 +93,9 @@ class _HomePageState extends State<HomePage> {
         break;
       case 'about':
         targetPage = const AboutPage();
+        break;
+      case 'admin':
+        targetPage = const AdminDashboardPage();
         break;
       default:
         return;

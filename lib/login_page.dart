@@ -77,18 +77,8 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       // Header avec logo
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.black,
-                              size: 24,
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                          ),
-                          Spacer(),
                           Row(
                             children: [
                               Text("P", style: TextStyle(
@@ -107,16 +97,6 @@ class _LoginPageState extends State<LoginPage> {
                                 fontWeight: FontWeight.bold
                               )),
                             ],
-                          ),
-                          Spacer(),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.grey[200],
-                            ),
-                            child: Icon(Icons.help_outline, color: Colors.grey[600]),
                           ),
                         ],
                       ),

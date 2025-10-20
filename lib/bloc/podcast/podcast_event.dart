@@ -23,13 +23,13 @@ class PodcastCreateRequested extends PodcastEvent {
   final String libelle;
   final String description;
   final String categoryUuid;
-  final File? image;
+  final File image;
 
   const PodcastCreateRequested({
     required this.libelle,
     required this.description,
     required this.categoryUuid,
-    this.image,
+    required this.image,
   });
 
   @override

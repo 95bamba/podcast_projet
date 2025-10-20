@@ -80,7 +80,7 @@ class PodcastRepository {
     required String libelle,
     required String description,
     required String categoryUuid,
-    File? image,
+    required File image, // Maintenant obligatoire
   }) async {
     try {
       final fields = {
@@ -90,9 +90,10 @@ class PodcastRepository {
       };
 
       final response = await _apiService.uploadFile(
-        '/podcast',
+        '/podcast/createPodcast',
         fields,
         image,
+        fileFieldName: 'file', // Nom du champ attendu par l'API
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -110,9 +111,12 @@ class PodcastRepository {
     required String libelle,
     required String description,
     required String categoryUuid,
-    File? image,
+    File? image, // Optionnel pour la mise à jour
   }) async {
     try {
+      print('DEBUG: Updating podcast with uuid: $uuid');
+      print('DEBUG: libelle: $libelle, description: $description, categoryUuid: $categoryUuid');
+
       final fields = {
         'libelle': libelle,
         'description': description,
@@ -123,14 +127,19 @@ class PodcastRepository {
         '/podcast/$uuid',
         fields,
         image,
+        fileFieldName: 'file',
+        method: 'PUT', // Utiliser PUT pour la mise à jour
       );
 
-      if (response.statusCode == 200) {
+      print('DEBUG: Update response status: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return Podcast.fromJson(response.data);
       } else {
-        throw Exception('Failed to update podcast');
+        throw Exception('Failed to update podcast: Status ${response.statusCode}');
       }
     } catch (e) {
+      print('DEBUG: Update error: $e');
       throw Exception('Error updating podcast: $e');
     }
   }

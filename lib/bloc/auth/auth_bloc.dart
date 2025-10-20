@@ -77,9 +77,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
 
       if (result['success'] == true) {
+        // Émettre seulement AuthSignupSuccess
+        // Le listener dans signup_page.dart gérera la navigation
         emit(AuthSignupSuccess(result['message'] ?? 'Signup successful'));
-        // After signup, user needs to login
-        emit(AuthUnauthenticated());
       } else {
         emit(AuthError(result['message'] ?? 'Signup failed'));
       }

@@ -8,11 +8,13 @@ import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'repositories/category_repository.dart';
 import 'repositories/podcast_repository.dart';
+import 'repositories/episode_repository.dart';
 
 // Import BLoCs
 import 'bloc/auth/auth_bloc.dart';
 import 'bloc/category/category_bloc.dart';
 import 'bloc/podcast/podcast_bloc.dart';
+import 'bloc/episode/episode_bloc.dart';
 
 // Import des pages
 import 'login_page.dart';
@@ -22,6 +24,7 @@ import 'favorites_page.dart';
 import 'profile_page.dart';
 import 'settings_page.dart';
 import 'about_page.dart';
+import 'admin_dashboard_page.dart';
 import 'widgets/hamburger_menu.dart';
 import 'bloc/auth/auth_state.dart';
 import 'bloc/auth/auth_event.dart';
@@ -46,6 +49,7 @@ class MyApp extends StatelessWidget {
     final authService = AuthService(apiService);
     final categoryRepository = CategoryRepository(apiService);
     final podcastRepository = PodcastRepository(apiService);
+    final episodeRepository = EpisodeRepository(apiService);
 
     return MultiRepositoryProvider(
       providers: [
@@ -53,6 +57,7 @@ class MyApp extends StatelessWidget {
         RepositoryProvider.value(value: authService),
         RepositoryProvider.value(value: categoryRepository),
         RepositoryProvider.value(value: podcastRepository),
+        RepositoryProvider.value(value: episodeRepository),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -64,6 +69,9 @@ class MyApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (context) => PodcastBloc(podcastRepository),
+          ),
+          BlocProvider(
+            create: (context) => EpisodeBloc(episodeRepository),
           ),
         ],
         child: MaterialApp(

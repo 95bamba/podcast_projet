@@ -42,16 +42,12 @@ class CategoryRepository {
     File? image,
   }) async {
     try {
-      final fields = {
+      final data = {
         'libelle': libelle,
         'description': description,
       };
 
-      final response = await _apiService.uploadFile(
-        '/category',
-        fields,
-        image,
-      );
+      final response = await _apiService.post('/category', data: data);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return Category.fromJson(response.data);
@@ -70,16 +66,12 @@ class CategoryRepository {
     File? image,
   }) async {
     try {
-      final fields = {
+      final data = {
         'libelle': libelle,
         'description': description,
       };
 
-      final response = await _apiService.uploadFile(
-        '/category/$uuid',
-        fields,
-        image,
-      );
+      final response = await _apiService.put('/category/$uuid', data: data);
 
       if (response.statusCode == 200) {
         return Category.fromJson(response.data);

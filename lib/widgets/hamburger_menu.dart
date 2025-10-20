@@ -87,6 +87,13 @@ class HamburgerMenu extends StatelessWidget {
                     'about',
                     Icons.info,
                   ),
+                  const Divider(),
+                  _buildMenuItem(
+                    context,
+                    'Administration',
+                    'admin',
+                    Icons.admin_panel_settings,
+                  ),
                 ],
               ),
             ),

@@ -22,13 +22,22 @@ class Episode extends Equatable {
   });
 
   factory Episode.fromJson(Map<String, dynamic> json) {
+    // Extraire le podcast_uuid depuis l'objet podcast ou directement
+    String extractPodcastUuid() {
+      if (json['podcast'] != null && json['podcast'] is Map) {
+        return json['podcast']['uuid'] ?? '';
+      }
+      return json['podcast_uuid'] ?? json['podcastUuid'] ?? '';
+    }
+
     return Episode(
       uuid: json['uuid'] ?? '',
-      title: json['title'] ?? '',
+      title: json['title'] ?? json['libelle'] ?? '',
       description: json['description'] ?? '',
-      podcastUuid: json['podcast_uuid'] ?? json['podcastUuid'] ?? '',
-      audioPath: json['audioPath'],
-      duration: json['duration'],
+      podcastUuid: extractPodcastUuid(),
+      // Gérer différents noms de champs pour l'audio: audioPath, audioFileUuid, audio_file_uuid
+      audioPath: json['audioPath'] ?? json['audioFileUuid'] ?? json['audio_file_uuid'],
+      duration: json['duration']?.toString(),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,

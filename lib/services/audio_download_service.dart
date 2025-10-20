@@ -3,8 +3,13 @@ import 'dart:async';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:podcast/repositories/episode_repository.dart';
 
 class AudioDownloadService {
+  final EpisodeRepository? _episodeRepository;
+
+  AudioDownloadService({EpisodeRepository? episodeRepository})
+      : _episodeRepository = episodeRepository;
   Future<bool> downloadAudio(
     String url,
     String fileName, {
@@ -102,6 +107,64 @@ class AudioDownloadService {
       return await file.exists();
     } catch (e) {
       debugPrint('Erreur lors de la vérification du fichier: $e');
+      return false;
+    }
+  }
+
+  /// Télécharge un fichier audio via l'API GED (avec authentification)
+  Future<bool> downloadAudioFromGED(
+    String fileUuid,
+    String fileName, {
+    void Function(double)? onProgress,
+  }) async {
+    try {
+      if (_episodeRepository == null) {
+        debugPrint('EpisodeRepository not provided');
+        return false;
+      }
+
+      debugPrint('Début du téléchargement via GED: $fileUuid');
+      debugPrint('Nom du fichier: $fileName');
+
+      // Obtenir le répertoire de téléchargement
+      final appDir = await getApplicationDocumentsDirectory();
+      final downloadsDir = Directory('${appDir.path}/downloads');
+      debugPrint('Dossier de téléchargement: ${downloadsDir.path}');
+
+      // Créer le dossier s'il n'existe pas
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
+        debugPrint('Dossier de téléchargement créé');
+      }
+
+      final file = File('${downloadsDir.path}/$fileName');
+      debugPrint('Chemin du fichier: ${file.path}');
+
+      // Vérifier si le fichier existe déjà
+      if (await file.exists()) {
+        debugPrint('Le fichier existe déjà');
+        return true;
+      }
+
+      // Télécharger le fichier via l'API
+      debugPrint('Téléchargement via API GED...');
+      final bytes = await _episodeRepository!.downloadEpisodeAudio(fileUuid);
+
+      debugPrint('Fichier téléchargé: ${bytes.length} bytes');
+
+      // Écrire le fichier
+      debugPrint('Écriture du fichier...');
+      await file.writeAsBytes(bytes);
+      debugPrint('Fichier écrit avec succès');
+
+      if (onProgress != null) {
+        onProgress(100.0);
+      }
+
+      return true;
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors du téléchargement GED: $e');
+      debugPrint('Stack trace: $stackTrace');
       return false;
     }
   }
