@@ -70,6 +70,22 @@ class ApiService {
     await prefs.remove('auth_token');
   }
 
+  // User login management
+  Future<void> setUserLogin(String userLogin) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_login', userLogin);
+  }
+
+  Future<String?> getUserLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_login');
+  }
+
+  Future<void> clearUserLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_login');
+  }
+
   String? get token => _token;
   bool get hasToken => _token != null;
 

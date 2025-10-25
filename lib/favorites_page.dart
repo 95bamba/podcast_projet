@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:podcast/bloc/auth/auth_bloc.dart';
+import 'package:podcast/bloc/auth/auth_state.dart';
+import 'package:podcast/models/favorite.dart';
+import 'package:podcast/services/favorite_service.dart';
+import 'package:podcast/services/api_service.dart';
 import 'widgets/hamburger_menu.dart';
 import 'home_page.dart' as home;
 import 'playlist_page.dart';
@@ -16,71 +22,72 @@ class FavoritesPage extends StatefulWidget {
 
 class _FavoritesPageState extends State<FavoritesPage> {
   final TextEditingController _searchController = TextEditingController();
-  final List<Map<String, dynamic>> _favoriteEpisodes = [];
-  List<Map<String, dynamic>> _filteredEpisodes = [];
+  List<Favorite> _favorites = [];
+  List<Favorite> _filteredFavorites = [];
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration? duration;
   Duration position = Duration.zero;
   int? currentEpisodeIndex;
-  
+
   String _currentPage = 'favorites';
   bool _isMenuOpen = false;
+
+  late FavoriteService _favoriteService;
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _userLogin;
 
   @override
   void initState() {
     super.initState();
-    _loadFavoriteEpisodes();
+    _favoriteService = FavoriteService(ApiService());
     _initAudioPlayer();
+    _loadUserAndFavorites();
   }
 
-  void _loadFavoriteEpisodes() {
-    // Simuler le chargement des épisodes favoris
+  void _loadUserAndFavorites() async {
+    // Get user from AuthBloc
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated && authState.user != null) {
+      _userLogin = authState.user!.login;
+      await _loadFavoriteEpisodes();
+    } else {
+      setState(() {
+        _errorMessage = 'Utilisateur non connecté';
+      });
+    }
+  }
+
+  Future<void> _loadFavoriteEpisodes() async {
+    if (_userLogin == null) return;
+
     setState(() {
-      _favoriteEpisodes.addAll([
-        {
-          'title': 'Introduction à la spiritualité',
-          'duration': '15:30',
-          'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-          'playlistTitle': 'Religion et Spiritualité',
-          'image': 'assets/fa.jpg',
-          'color': Colors.deepOrangeAccent,
-        },
-        {
-          'title': 'Techniques d\'apprentissage',
-          'duration': '18:25',
-          'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-          'playlistTitle': 'Éducation et Apprentissage',
-          'image': 'assets/bve.jpg',
-          'color': Color(0xff4CAF50),
-        },
-        {
-          'title': 'Définir ses objectifs',
-          'duration': '20:15',
-          'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3',
-          'playlistTitle': 'Motivation et Développement',
-          'image': 'assets/mame.jpg',
-          'color': Color(0xff2196F3),
-        },
-        {
-          'title': 'Méditation guidée',
-          'duration': '20:45',
-          'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-          'playlistTitle': 'Religion et Spiritualité',
-          'image': 'assets/fa.jpg',
-          'color': Colors.deepOrangeAccent,
-        },
-        {
-          'title': 'Gestion du temps',
-          'duration': '25:15',
-          'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3',
-          'playlistTitle': 'Éducation et Apprentissage',
-          'image': 'assets/bve.jpg',
-          'color': Color(0xff4CAF50),
-        },
-      ]);
-      _filteredEpisodes = _favoriteEpisodes;
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final result = await _favoriteService.getAllFavorites(_userLogin!);
+
+      if (result['success'] == true) {
+        setState(() {
+          _favorites = result['favorites'] ?? [];
+          _filteredFavorites = _favorites;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = result['message'] ?? 'Erreur lors du chargement';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erreur: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _initAudioPlayer() async {
@@ -123,23 +130,39 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   Future<void> _playEpisode(int index) async {
     try {
-      if (index >= 0 && index < _filteredEpisodes.length) {
-        await _audioPlayer.setUrl(_filteredEpisodes[index]['audioUrl']);
-        await _audioPlayer.play();
-        setState(() {
-          currentEpisodeIndex = index;
-          isPlaying = true;
-        });
+      if (index >= 0 && index < _filteredFavorites.length) {
+        final favorite = _filteredFavorites[index];
+        final audioUrl = favorite.episode?.audioPath;
+
+        if (audioUrl != null && audioUrl.isNotEmpty) {
+          // Build full URL if needed
+          final fullUrl = audioUrl.startsWith('http')
+              ? audioUrl
+              : '${ApiService.baseUrl}/files/getAudio?audioFileUuid=$audioUrl';
+
+          await _audioPlayer.setUrl(fullUrl);
+          await _audioPlayer.play();
+          setState(() {
+            currentEpisodeIndex = index;
+            isPlaying = true;
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error playing episode: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la lecture audio'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   Future<void> _playNextEpisode() async {
-    if (currentEpisodeIndex != null && currentEpisodeIndex! < _filteredEpisodes.length - 1) {
+    if (currentEpisodeIndex != null && currentEpisodeIndex! < _filteredFavorites.length - 1) {
       await _playEpisode(currentEpisodeIndex! + 1);
-    } else if (currentEpisodeIndex != null && currentEpisodeIndex! == _filteredEpisodes.length - 1) {
+    } else if (currentEpisodeIndex != null && currentEpisodeIndex! == _filteredFavorites.length - 1) {
       await _playEpisode(0);
     }
   }
@@ -148,38 +171,69 @@ class _FavoritesPageState extends State<FavoritesPage> {
     if (currentEpisodeIndex != null && currentEpisodeIndex! > 0) {
       await _playEpisode(currentEpisodeIndex! - 1);
     } else if (currentEpisodeIndex != null && currentEpisodeIndex! == 0) {
-      await _playEpisode(_filteredEpisodes.length - 1);
+      await _playEpisode(_filteredFavorites.length - 1);
     }
   }
 
   void _filterEpisodes(String query) {
     setState(() {
-      _filteredEpisodes = _favoriteEpisodes
-          .where((episode) =>
-              episode['title'].toLowerCase().contains(query.toLowerCase()) ||
-              episode['playlistTitle'].toLowerCase().contains(query.toLowerCase()))
+      _filteredFavorites = _favorites
+          .where((favorite) {
+            final title = favorite.episode?.title ?? '';
+            return title.toLowerCase().contains(query.toLowerCase());
+          })
           .toList();
     });
   }
 
-  void _removeFavorite(int index) {
+  Future<void> _removeFavorite(int index) async {
+    if (index < 0 || index >= _filteredFavorites.length) return;
+
+    final favorite = _filteredFavorites[index];
+
+    // Show loading indicator
     setState(() {
-      _favoriteEpisodes.removeAt(index);
-      _filteredEpisodes = _favoriteEpisodes
-          .where((episode) =>
-              episode['title'].toLowerCase().contains(_searchController.text.toLowerCase()) ||
-              episode['playlistTitle'].toLowerCase().contains(_searchController.text.toLowerCase()))
-          .toList();
+      _isLoading = true;
     });
-    
-    // Show snackbar confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Épisode retiré des favoris'),
-        backgroundColor: Colors.deepOrangeAccent,
-        duration: Duration(seconds: 2),
-      ),
-    );
+
+    try {
+      final result = await _favoriteService.deleteFavorite(favorite.uuid);
+
+      if (result['success'] == true) {
+        // Reload favorites
+        await _loadFavoriteEpisodes();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Épisode retiré des favoris'),
+            backgroundColor: Colors.deepOrangeAccent,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Erreur lors de la suppression'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
   
   void _changePage(String page) {
@@ -365,7 +419,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${_filteredEpisodes.length} épisodes',
+                            '${_filteredFavorites.length} épisodes',
                             style: TextStyle(
                               color: Colors.deepOrangeAccent,
                               fontWeight: FontWeight.w600,
@@ -409,8 +463,42 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
                     SizedBox(height: 25),
 
+                    // Error message
+                    if (_errorMessage != null)
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        margin: EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Loading indicator
+                    if (_isLoading)
+                      Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrangeAccent),
+                          ),
+                        ),
+                      )
                     // Liste des favoris - NOUVEAU DESIGN
-                    if (_filteredEpisodes.isEmpty)
+                    else if (_filteredFavorites.isEmpty)
                       Container(
                         height: 200,
                         child: Column(
@@ -444,10 +532,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
-                        itemCount: _filteredEpisodes.length,
+                        itemCount: _filteredFavorites.length,
                         itemBuilder: (context, index) {
-                          final episode = _filteredEpisodes[index];
+                          final favorite = _filteredFavorites[index];
+                          final episode = favorite.episode;
                           final isCurrentEpisode = currentEpisodeIndex == index;
+
+                          // Default values if episode is null
+                          final title = episode?.title ?? 'Episode sans titre';
+                          final duration = episode?.duration ?? '--:--';
+                          final Color episodeColor = Colors.deepOrangeAccent;
                           
                           return Container(
                             margin: EdgeInsets.only(bottom: 12),
@@ -456,7 +550,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
-                                color: isCurrentEpisode ? episode['color'] : Colors.grey[200]!,
+                                color: isCurrentEpisode ? episodeColor : Colors.grey[200]!,
                                 width: isCurrentEpisode ? 2 : 1,
                               ),
                               boxShadow: [
@@ -470,27 +564,29 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Image de l'épisode
+                                // Icon placeholder instead of image
                                 Container(
                                   width: 50,
                                   height: 50,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
-                                    image: DecorationImage(
-                                      image: AssetImage(episode['image']),
-                                      fit: BoxFit.cover,
-                                    ),
+                                    color: episodeColor.withOpacity(0.1),
+                                  ),
+                                  child: Icon(
+                                    Icons.music_note,
+                                    color: episodeColor,
+                                    size: 24,
                                   ),
                                 ),
                                 SizedBox(width: 12),
-                                
+
                                 // Contenu de l'épisode
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        episode['title'],
+                                        title,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 16,
@@ -501,12 +597,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                       ),
                                       SizedBox(height: 4),
                                       Text(
-                                        episode['playlistTitle'],
+                                        episode?.description ?? '',
                                         style: TextStyle(
                                           color: Colors.grey[600],
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
                                         ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       SizedBox(height: 6),
                                       Row(
@@ -514,13 +612,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                           Container(
                                             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: episode['color'].withOpacity(0.1),
+                                              color: episodeColor.withOpacity(0.1),
                                               borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              episode['duration'],
+                                              duration,
                                               style: TextStyle(
-                                                color: episode['color'],
+                                                color: episodeColor,
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -537,7 +635,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                                   width: 32,
                                                   height: 32,
                                                   decoration: BoxDecoration(
-                                                    color: episode['color'],
+                                                    color: episodeColor,
                                                     borderRadius: BorderRadius.circular(16),
                                                   ),
                                                   child: Icon(
