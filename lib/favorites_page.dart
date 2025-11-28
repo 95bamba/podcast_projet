@@ -258,60 +258,47 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           fontWeight: FontWeight.bold
                         )),
                         Text("Favoris", style: TextStyle(
-                          color: Color(0xFFFF6B35), 
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold
-                            )),
-                          ],
-                        ),
-                        Spacer(),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey[200],
-                          ),
-                          child: Icon(Icons.notifications_outlined, color: Colors.grey[600]),
-                        ),
+                          color: Color(0xFFFF6B35),
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold
+                        )),
                       ],
                     ),
-
-                    SizedBox(height: 30),
-
-                    // Titre et statistiques
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Mes Favoris',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrangeAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_filteredFavorites.length} épisodes',
-                            style: TextStyle(
-                              color: Colors.deepOrangeAccent,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 20),
-
-                    // Barre de recherche
                     Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[200],
+                      ),
+                      child: Icon(Icons.notifications_outlined, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 30),
+
+                // Statistiques
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.deepOrangeAccent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_filteredFavorites.length} épisodes',
+                    style: TextStyle(
+                      color: Colors.deepOrangeAccent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 20),
+
+                // Barre de recherche
+                Container(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.grey[50],
@@ -339,10 +326,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       ),
                     ),
 
-                    SizedBox(height: 25),
+                SizedBox(height: 25),
 
-                    // Error message
-                    if (_errorMessage != null)
+                // Error message
+                if (_errorMessage != null)
                       Container(
                         padding: EdgeInsets.all(16),
                         margin: EdgeInsets.only(bottom: 20),
@@ -365,8 +352,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         ),
                       ),
 
-                    // Loading indicator
-                    if (_isLoading)
+                // Loading indicator
+                if (_isLoading)
                       Center(
                         child: Padding(
                           padding: EdgeInsets.all(40),
@@ -375,8 +362,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           ),
                         ),
                       )
-                    // Liste des favoris - NOUVEAU DESIGN
-                    else if (_filteredFavorites.isEmpty)
+                // Liste des favoris - NOUVEAU DESIGN
+                else if (_filteredFavorites.isEmpty)
                       Container(
                         height: 200,
                         child: Column(
@@ -406,8 +393,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           ],
                         ),
                       )
-                    else
-                      ListView.builder(
+                else
+                  ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: _filteredFavorites.length,
@@ -553,8 +540,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           );
                         },
                       ),
-                  ],
-                ),
               ],
             ),
           ),

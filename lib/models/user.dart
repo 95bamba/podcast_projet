@@ -7,6 +7,7 @@ class User extends Equatable {
   final String email;
   final String? profileImgPath;
   final int? accountState;
+  final String? role;
 
   const User({
     required this.login,
@@ -15,6 +16,7 @@ class User extends Equatable {
     required this.email,
     this.profileImgPath,
     this.accountState,
+    this.role,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,7 @@ class User extends Equatable {
       email: json['email'] ?? '',
       profileImgPath: json['profileImgPath'],
       accountState: json['accountState'],
+      role: json['role'],
     );
   }
 
@@ -36,9 +39,10 @@ class User extends Equatable {
       'email': email,
       'profileImgPath': profileImgPath,
       'accountState': accountState,
+      'role': role,
     };
   }
 
   @override
-  List<Object?> get props => [login, firstname, name, email, profileImgPath, accountState];
+  List<Object?> get props => [login, firstname, name, email, profileImgPath, accountState, role];
 }

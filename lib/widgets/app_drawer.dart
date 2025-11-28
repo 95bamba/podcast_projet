@@ -35,10 +35,10 @@ class AppDrawer extends StatelessWidget {
                     child: Icon(Icons.person, size: 40, color: Colors.deepOrange),
                   ),
                   accountName: Text(
-                    state.user.nom,
+                    state.user?.name ?? 'Utilisateur',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  accountEmail: Text(state.user.email),
+                  accountEmail: Text(state.user?.email ?? ''),
                 );
               }
 
@@ -139,7 +139,7 @@ class AppDrawer extends StatelessWidget {
                 // Admin section (conditional)
                 BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, state) {
-                    if (state is AuthAuthenticated && state.user.role == 'admin') {
+                    if (state is AuthAuthenticated && state.user?.role == 'admin') {
                       return Column(
                         children: [
                           Divider(height: 1),
