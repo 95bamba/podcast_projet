@@ -2,18 +2,27 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:async';
 
 class ApiService {
-  static const String baseUrl = 'http://51.254.204.25:2000';
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://51.254.204.25:2000';
   late final Dio _dio;
   String? _token;
 
+  // Stream controller for token expiration events
+  static final _tokenExpiredController = StreamController<void>.broadcast();
+  static Stream<void> get onTokenExpired => _tokenExpiredController.stream;
+
   ApiService() {
+    final connectTimeout = int.tryParse(dotenv.env['API_CONNECT_TIMEOUT'] ?? '30') ?? 30;
+    final receiveTimeout = int.tryParse(dotenv.env['API_RECEIVE_TIMEOUT'] ?? '30') ?? 30;
+
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: Duration(seconds: connectTimeout),
+        receiveTimeout: Duration(seconds: receiveTimeout),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -38,8 +47,11 @@ class ApiService {
           print('DEBUG API Error: ${error.response?.statusCode}');
           print('DEBUG Error Data: ${error.response?.data}');
           if (error.response?.statusCode == 401) {
-            // Token expired, clear it
+            // Token expired or invalid
+            print('DEBUG: Token expired - logging out user');
             await clearToken();
+            // Notify listeners that token has expired
+            _tokenExpiredController.add(null);
           }
           return handler.next(error);
         },
@@ -195,5 +207,27 @@ class ApiService {
         },
       ),
     );
+  }
+
+  // Playlist Management
+  Future<Response> createPlaylist({
+    required String libelle,
+    required String description,
+    File? file,
+  }) async {
+    return await uploadFile(
+      '/playlist/createPlayList',
+      {
+        'libelle': libelle,
+        'description': description,
+      },
+      file,
+      fileFieldName: 'file',
+      method: 'POST',
+    );
+  }
+
+  Future<Response> getPlaylists() async {
+    return await get('/playlist');
   }
 }

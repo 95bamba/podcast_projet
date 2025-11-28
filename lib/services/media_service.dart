@@ -1,6 +1,8 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Service pour gérer les URLs des médias (images, audio) depuis le serveur
 class MediaService {
-  static const String baseUrl = 'http://51.254.204.25:2000';
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://51.254.204.25:2000';
 
   /// Construit l'URL complète pour le streaming audio à partir de son UUID
   /// Exemple: http://51.254.204.25:2000/ged/preview?uuid=dc82e38d-9627-454f-84c2-b3a6a1009138

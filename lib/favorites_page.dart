@@ -6,12 +6,6 @@ import 'package:podcast/bloc/auth/auth_state.dart';
 import 'package:podcast/models/favorite.dart';
 import 'package:podcast/services/favorite_service.dart';
 import 'package:podcast/services/api_service.dart';
-import 'widgets/hamburger_menu.dart';
-import 'home_page.dart' as home;
-import 'playlist_page.dart';
-import 'profile_page.dart';
-import 'settings_page.dart';
-import 'about_page.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -29,9 +23,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
   Duration? duration;
   Duration position = Duration.zero;
   int? currentEpisodeIndex;
-
-  String _currentPage = 'favorites';
-  bool _isMenuOpen = false;
 
   late FavoriteService _favoriteService;
   bool _isLoading = false;
@@ -236,103 +227,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
     }
   }
   
-  void _changePage(String page) {
-    setState(() {
-      _currentPage = page;
-      _isMenuOpen = false;
-    });
-
-    switch (page) {
-      case 'home':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => home.HomePage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'playlist':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const PlaylistPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'favorites':
-        break;
-      case 'profile':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const ProfilePage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'settings':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const SettingsPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'about':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const AboutPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-    }
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -342,45 +236,29 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Contenu principal
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Header Row
                     Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.menu, color: Colors.black, size: 28),
-                          onPressed: () {
-                            setState(() {
-                              _isMenuOpen = !_isMenuOpen;
-                            });
-                          },
-                        ),
-                        SizedBox(width: 10),
-                        Row(
-                          children: [
-                            Text("P", style: TextStyle(
-                              color: Colors.black, 
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold
-                            )),
-                            Text("o", style: TextStyle(
-                              color: Color(0xFFFF6B35), 
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold
-                            )),
-                            Text("dcast", style: TextStyle(
-                              color: Colors.black, 
+                        Text("Mes ", style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold
+                        )),
+                        Text("Favoris", style: TextStyle(
+                          color: Color(0xFFFF6B35), 
                               fontSize: 32,
                               fontWeight: FontWeight.bold
                             )),
@@ -677,22 +555,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
-          
-          // Menu hamburger
-          HamburgerMenu(
-            currentPage: _currentPage,
-            onPageChange: _changePage,
-            isMenuOpen: _isMenuOpen,
-            onMenuToggle: (value) {
-              setState(() {
-                _isMenuOpen = value;
-              });
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

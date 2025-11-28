@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
-import 'favorites_page.dart';
-import 'playlist_page.dart';
-import 'profile_page.dart';
-import 'settings_page.dart';
-import 'about_page.dart';
-import 'admin_dashboard_page.dart';
-import 'widgets/hamburger_menu.dart';
 import 'bloc/category/category_bloc.dart';
 import 'bloc/category/category_event.dart';
 import 'bloc/category/category_state.dart';
@@ -27,10 +20,6 @@ class _HomePageState extends State<HomePage> {
   Duration? duration;
   Duration position = Duration.zero;
   final TextEditingController _searchController = TextEditingController();
-
-  // Variables pour le menu hamburger
-  String _currentPage = 'home';
-  bool _isMenuOpen = false;
 
   @override
   void initState() {
@@ -71,142 +60,43 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  void _navigateToPage(String page) {
-    setState(() {
-      _currentPage = page;
-      _isMenuOpen = false;
-    });
-
-    Widget targetPage;
-    switch (page) {
-      case 'favorites':
-        targetPage = const FavoritesPage();
-        break;
-      case 'playlist':
-        targetPage = const PlaylistPage();
-        break;
-      case 'profile':
-        targetPage = const ProfilePage();
-        break;
-      case 'settings':
-        targetPage = const SettingsPage();
-        break;
-      case 'about':
-        targetPage = const AboutPage();
-        break;
-      case 'admin':
-        targetPage = const AdminDashboardPage();
-        break;
-      default:
-        return;
-    }
-
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => targetPage,
-        transitionDuration: const Duration(milliseconds: 300),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          var offsetAnimation = animation.drive(tween);
-          return SlideTransition(position: offsetAnimation, child: child);
-        },
-      ),
-    );
-  }
-
-  void _toggleMenu() {
-    setState(() {
-      _isMenuOpen = !_isMenuOpen;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Stack(
-        children: [
-          SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                // Header avec menu et recherche
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header avec menu hamburger
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.menu, size: 28),
-                              onPressed: _toggleMenu,
-                            ),
-                            Row(
-                              children: [
-                                const Text("Galsen ", style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87
-                                )),
-                                Text("Podcast", style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange[700]
-                                )),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.orange[50],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(Icons.notifications_outlined,
-                                  color: Colors.orange[700], size: 24),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Search Bar
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Rechercher un podcast...',
-                              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-                              border: InputBorder.none,
-                              icon: Icon(Icons.search, color: Colors.grey[600], size: 20),
-                            ),
-                          ),
-                        ),
-                      ],
+    return Container(
+      color: Colors.grey[50],
+      child: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            // Search Bar
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[200]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un podcast...',
+                      hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      border: InputBorder.none,
+                      icon: Icon(Icons.search, color: Colors.grey[600], size: 20),
                     ),
                   ),
                 ),
+              ),
+            ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
@@ -376,23 +266,9 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 30)),
-              ],
-            ),
-          ),
-
-          // Menu hamburger
-          HamburgerMenu(
-            isMenuOpen: _isMenuOpen,
-            currentPage: _currentPage,
-            onPageChange: _navigateToPage,
-            onMenuToggle: (isOpen) {
-              setState(() {
-                _isMenuOpen = isOpen;
-              });
-            },
-          ),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 30)),
+          ],
+        ),
       ),
     );
   }
