@@ -5,6 +5,7 @@ class HamburgerMenu extends StatelessWidget {
   final Function(String) onPageChange;
   final bool isMenuOpen;
   final Function(bool) onMenuToggle;
+  final BuildContext parentContext;
 
   const HamburgerMenu({
     Key? key,
@@ -12,6 +13,7 @@ class HamburgerMenu extends StatelessWidget {
     required this.onPageChange,
     required this.isMenuOpen,
     required this.onMenuToggle,
+    required this.parentContext,
   }) : super(key: key);
 
   @override
@@ -87,6 +89,13 @@ class HamburgerMenu extends StatelessWidget {
                     'about',
                     Icons.info,
                   ),
+                  const Divider(),
+                  _buildMenuItem(
+                    context,
+                    'Administration',
+                    'admin',
+                    Icons.admin_panel_settings,
+                  ),
                 ],
               ),
             ),
@@ -116,8 +125,8 @@ class HamburgerMenu extends StatelessWidget {
         ),
       ),
       onTap: () {
-        onPageChange(pageName);
         onMenuToggle(false);
+        onPageChange(pageName);
       },
     );
   }

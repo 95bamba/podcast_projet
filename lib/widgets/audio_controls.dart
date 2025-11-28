@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../services/audio_download_service.dart';
+import '../repositories/episode_repository.dart';
 import 'download_progress.dart';
 
 class AudioControls extends StatefulWidget {
-  final String audioUrl;
+  final String? audioFileUuid;  // UUID du fichier dans GED
   final String fileName;
   final VoidCallback onPlay;
 
   const AudioControls({
     Key? key,
-    required this.audioUrl,
+    this.audioFileUuid,  // Peut être null si pas de fichier audio
     required this.fileName,
     required this.onPlay,
   }) : super(key: key);
@@ -19,13 +21,51 @@ class AudioControls extends StatefulWidget {
 }
 
 class _AudioControlsState extends State<AudioControls> {
-  final AudioDownloadService _downloadService = AudioDownloadService();
+  AudioDownloadService? _downloadService;
   bool _isDownloading = false;
   double _downloadProgress = 0;
   String? _localFilePath;
+  bool _isDownloaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialiser le service de téléchargement avec le repository
+    if (_downloadService == null) {
+      final episodeRepo = context.read<EpisodeRepository>();
+      _downloadService = AudioDownloadService(episodeRepository: episodeRepo);
+      // Vérifier si le fichier est déjà téléchargé
+      _checkIfDownloaded();
+    }
+  }
+
+  Future<void> _checkIfDownloaded() async {
+    if (_downloadService != null) {
+      final isDownloaded = await _downloadService!.isAudioDownloaded(widget.fileName);
+      if (mounted) {
+        setState(() {
+          _isDownloaded = isDownloaded;
+          if (isDownloaded) {
+            _localFilePath = widget.fileName;
+          }
+        });
+      }
+    }
+  }
 
   Future<void> _downloadAudio() async {
-    if (_isDownloading) return;
+    if (_isDownloading || _downloadService == null) return;
+
+    // Vérifier que nous avons un UUID de fichier
+    if (widget.audioFileUuid == null || widget.audioFileUuid!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucun fichier audio disponible pour cet épisode'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isDownloading = true;
@@ -33,8 +73,9 @@ class _AudioControlsState extends State<AudioControls> {
     });
 
     try {
-      final success = await _downloadService.downloadAudio(
-        widget.audioUrl,
+      // Utiliser la nouvelle méthode downloadAudioFromGED
+      final success = await _downloadService!.downloadAudioFromGED(
+        widget.audioFileUuid!,
         widget.fileName,
         onProgress: (progress) {
           setState(() {
@@ -45,29 +86,36 @@ class _AudioControlsState extends State<AudioControls> {
 
       if (success) {
         setState(() {
-          _localFilePath = widget.fileName; // Stocker le nom du fichier comme référence
+          _localFilePath = widget.fileName;
+          _isDownloaded = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Téléchargement terminé'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Téléchargement terminé'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Échec du téléchargement'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Échec du téléchargement'),
+          SnackBar(
+            content: Text('Erreur lors du téléchargement: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors du téléchargement: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     } finally {
       setState(() {
         _isDownloading = false;
@@ -76,28 +124,33 @@ class _AudioControlsState extends State<AudioControls> {
   }
 
   Future<void> _deleteAudio() async {
-    if (_localFilePath == null) return;
+    if (_localFilePath == null || _downloadService == null) return;
 
     try {
-      final success = await _downloadService.deleteAudio(_localFilePath!);
+      final success = await _downloadService!.deleteAudio(_localFilePath!);
       if (success) {
         setState(() {
           _localFilePath = null;
+          _isDownloaded = false;
         });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Fichier audio supprimé'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fichier audio supprimé'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text('Erreur lors de la suppression: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors de la suppression: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:podcast/bloc/category/category_bloc.dart';
+import 'package:podcast/bloc/category/category_event.dart';
+import 'package:podcast/bloc/category/category_state.dart';
+import 'package:podcast/models/category.dart';
 
 class AddPodcastPage extends StatefulWidget {
   const AddPodcastPage({super.key});
@@ -13,22 +18,16 @@ class _AddPodcastPageState extends State<AddPodcastPage> {
   final _descriptionController = TextEditingController();
   final _authorController = TextEditingController();
   final _durationController = TextEditingController();
-  String? _selectedCategory;
+  Category? _selectedCategory;
   String? _selectedImage;
   bool _isLoading = false;
 
-  final List<String> _categories = [
-    'Religion et Spiritualité',
-    'Éducation et Apprentissage',
-    'Motivation et Développement',
-    'Actualités',
-    'Divertissement',
-    'Technologie',
-    'Santé et Bien-être',
-    'Business',
-    'Arts',
-    'Sports'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Charger les catégories au démarrage
+    context.read<CategoryBloc>().add(CategoryLoadRequested());
+  }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
@@ -217,52 +216,89 @@ class _AddPodcastPageState extends State<AddPodcastPage> {
         ),
         SizedBox(height: 20),
 
-        // Catégorie
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: DropdownButtonFormField<String>(
-            value: _selectedCategory,
-            decoration: InputDecoration(
-              labelText: 'Catégorie',
-              hintText: 'Sélectionnez une catégorie',
-              prefixIcon: Icon(Icons.category, color: Colors.grey[500]),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-            items: _categories.map((String category) {
-              return DropdownMenuItem<String>(
-                value: category,
-                child: Text(
-                  category,
-                  style: TextStyle(fontSize: 16),
+        // Catégorie - Chargement depuis l'API
+        BlocBuilder<CategoryBloc, CategoryState>(
+          builder: (context, state) {
+            if (state is CategoryLoading) {
+              return Container(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                  child: CircularProgressIndicator(color: Color(0xFFFF6B35)),
                 ),
               );
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                _selectedCategory = newValue;
-              });
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Veuillez sélectionner une catégorie';
-              }
-              return null;
-            },
-            dropdownColor: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            icon: Icon(Icons.arrow_drop_down, color: Colors.grey[500]),
-          ),
+            }
+
+            if (state is CategoryError) {
+              return Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error, color: Colors.red),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Erreur: ${state.message}',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final categories = state is CategoryLoaded ? state.categories : <Category>[];
+
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: DropdownButtonFormField<Category>(
+                value: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: 'Catégorie',
+                  hintText: 'Sélectionnez une catégorie',
+                  prefixIcon: Icon(Icons.category, color: Colors.grey[500]),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                items: categories.map((Category category) {
+                  return DropdownMenuItem<Category>(
+                    value: category,
+                    child: Text(
+                      category.libelle,
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (Category? newValue) {
+                  setState(() {
+                    _selectedCategory = newValue;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Veuillez sélectionner une catégorie';
+                  }
+                  return null;
+                },
+                dropdownColor: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                icon: Icon(Icons.arrow_drop_down, color: Colors.grey[500]),
+              ),
+            );
+          },
         ),
         SizedBox(height: 20),
 

@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import 'widgets/hamburger_menu.dart';
-import 'home_page.dart' as home;
-import 'favorites_page.dart';
-import 'profile_page.dart';
-import 'settings_page.dart';
-import 'about_page.dart';
 import 'services/audio_download_service.dart';
+import 'services/api_service.dart';
+import 'create_playlist_page.dart';
 
 class PlaylistPage extends StatefulWidget {
   const PlaylistPage({super.key});
@@ -17,84 +13,71 @@ class PlaylistPage extends StatefulWidget {
 
 class _PlaylistPageState extends State<PlaylistPage> {
   final TextEditingController _searchController = TextEditingController();
-  final List<Map<String, dynamic>> _playlists = [
-    {
-      'title': 'Religion et Spiritualité',
-      'image': 'assets/fa.jpg', 
-      'episodeCount': 8,
-      'color': Colors.deepOrangeAccent,
-      'episodes': [
-        {'title': 'Introduction à la spiritualité', 'duration': '15:30', 'audioUrl': 'https://www2.cs.uic.edu/~i101/SoundFiles/StarWars3.wav'},
-        {'title': 'Méditation guidée', 'duration': '20:45', 'audioUrl': 'https://www2.cs.uic.edu/~i101/SoundFiles/ImperialMarch.wav'},
-        {'title': 'Prière et réflexion', 'duration': '18:20', 'audioUrl': 'https://www2.cs.uic.edu/~i101/SoundFiles/gettysburg.wav'},
-        {'title': 'Sagesse ancienne', 'duration': '25:10', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'},
-        {'title': 'Pratiques quotidiennes', 'duration': '12:35', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'},
-        {'title': 'Questions et réponses', 'duration': '30:15', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3'},
-        {'title': 'Témoignages', 'duration': '22:40', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3'},
-        {'title': 'Conclusion et méditation', 'duration': '16:50', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'},
-      ],
-    },
-    {
-      'title': 'Éducation et Apprentissage',
-      'image': 'assets/bve.jpg',
-      'episodeCount': 6,
-      'color': Color(0xff4CAF50),
-      'episodes': [
-        {'title': 'Techniques d\'apprentissage', 'duration': '18:25', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'},
-        {'title': 'Mémoire et concentration', 'duration': '22:10', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3'},
-        {'title': 'Lecture rapide', 'duration': '15:40', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3'},
-        {'title': 'Prise de notes efficace', 'duration': '19:30', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3'},
-        {'title': 'Gestion du temps', 'duration': '25:15', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3'},
-        {'title': 'Préparation aux examens', 'duration': '28:20', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3'},
-      ],
-    },
-    {
-      'title': 'Motivation et Développement',
-      'image': 'assets/mame.jpg',
-      'episodeCount': 7,
-      'color': Color(0xff2196F3),
-      'episodes': [
-        {'title': 'Définir ses objectifs', 'duration': '20:15', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'},
-        {'title': 'Surmonter les obstacles', 'duration': '18:40', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-16.mp3'},
-        {'title': 'Cultiver la persévérance', 'duration': '22:30', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-17.mp3'},
-        {'title': 'Mindset de croissance', 'duration': '25:50', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-18.mp3'},
-        {'title': 'Routines matinales', 'duration': '15:20', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-19.mp3'},
-        {'title': 'Visualisation et affirmation', 'duration': '19:45', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-20.mp3'},
-        {'title': 'Célébrer les succès', 'duration': '16:35', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-21.mp3'},
-      ],
-    },
-    {
-      'title': 'Fiction et Histoire',
-      'image': 'assets/fa.jpg',
-      'episodeCount': 9,
-      'color': Color(0xff9C27B0),
-      'episodes': [
-        {'title': 'Introduction à l\'histoire', 'duration': '12:30', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-22.mp3'},
-        {'title': 'Les origines', 'duration': '18:45', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-23.mp3'},
-        {'title': 'L\'évolution', 'duration': '22:20', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-24.mp3'},
-        {'title': 'Les personnages', 'duration': '25:10', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-25.mp3'},
-        {'title': 'Les conflits', 'duration': '20:35', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-26.mp3'},
-        {'title': 'La résolution', 'duration': '15:50', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-27.mp3'},
-        {'title': 'Les leçons', 'duration': '19:25', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-28.mp3'},
-        {'title': 'L\'impact', 'duration': '16:40', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-29.mp3'},
-        {'title': 'Conclusion', 'duration': '14:15', 'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-30.mp3'},
-      ],
-    },
-  ];
+  final ApiService _apiService = ApiService();
+  List<Map<String, dynamic>> _playlists = [];
   List<Map<String, dynamic>> _filteredPlaylists = [];
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration? duration;
   Duration position = Duration.zero;
-  
-  String _currentPage = 'playlist';
-  bool _isMenuOpen = false;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _filteredPlaylists = _playlists;
+    _apiService.loadToken();
+    _fetchPlaylists();
     _initAudioPlayer();
+  }
+
+  Future<void> _fetchPlaylists() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _apiService.getPlaylists();
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+
+        // Parse the response data
+        if (data is List) {
+          setState(() {
+            _playlists = data.map((item) {
+              return {
+                'id': item['_id'] ?? '',
+                'title': item['libelle'] ?? 'Sans titre',
+                'description': item['description'] ?? '',
+                'image': item['file'] ?? '', // URL de l'image depuis l'API
+                'episodeCount': 0, // À adapter selon votre structure
+                'color': Colors.deepOrangeAccent, // Couleur par défaut
+                'episodes': [], // À adapter selon votre structure
+              };
+            }).toList();
+            _filteredPlaylists = _playlists;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Format de données invalide';
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Erreur lors du chargement des playlists';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erreur: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _initAudioPlayer() async {
@@ -153,100 +136,24 @@ class _PlaylistPageState extends State<PlaylistPage> {
     );
   }
 
-  void _changePage(String page) {
-    setState(() {
-      _currentPage = page;
-      _isMenuOpen = false;
-    });
 
-    switch (page) {
-      case 'home':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const home.HomePage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'playlist':
-        break;
-      case 'favorites':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const FavoritesPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'profile':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const ProfilePage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'settings':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const SettingsPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'about':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const AboutPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
+  void _navigateToCreatePlaylist() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreatePlaylistPage(),
+      ),
+    );
+
+    // Si la playlist a été créée avec succès, rafraîchir la liste
+    if (result == true && mounted) {
+      _fetchPlaylists();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Playlist créée avec succès!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
@@ -257,14 +164,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {
-            setState(() {
-              _isMenuOpen = !_isMenuOpen;
-            });
-          },
-        ),
+        automaticallyImplyLeading: false,
         title: const Text(
           'Podcasts Playlists',
           style: TextStyle(
@@ -274,210 +174,279 @@ class _PlaylistPageState extends State<PlaylistPage> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle, color: Color(0xFFFF6B35)),
+            onPressed: _navigateToCreatePlaylist,
+            tooltip: 'Créer une playlist',
+          ),
+        ],
       ),
-      body: Stack(
-        children: [
-          // Contenu principal
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Barre de recherche
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
+      body: SafeArea(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF6B35),
                     ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _filterPlaylists,
-                      decoration: InputDecoration(
-                        hintText: 'Rechercher une playlist...',
-                        hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-                        border: InputBorder.none,
-                        icon: Icon(Icons.search, color: Colors.grey[600], size: 20),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear, color: Colors.grey[600], size: 18),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _filterPlaylists('');
-                                },
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 20),
-
-                  // Liste des playlists avec nouveau design
-                  Text(
-                    'Playlists Podcasts',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 15),
-
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: _filteredPlaylists.length,
-                    itemBuilder: (context, index) {
-                      final playlist = _filteredPlaylists[index];
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 16),
-                        child: Row(
+                  )
+                : _errorMessage != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Image de la playlist
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                image: DecorationImage(
-                                  image: AssetImage(playlist['image']),
-                                  fit: BoxFit.cover,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
+                            Icon(
+                              Icons.error_outline,
+                              size: 60,
+                              color: Colors.red[300],
                             ),
-                            SizedBox(width: 12),
-                            
-                            // Contenu
-                            Expanded(
-                              child: Container(
-                                padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 6,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                  border: Border.all(
-                                    color: Colors.grey[100]!,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      playlist['title'],
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Colors.black87,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Playlist',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: playlist['color'].withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            '${playlist['episodeCount']} épisode${playlist['episodeCount'] > 1 ? 's' : ''}',
-                                            style: TextStyle(
-                                              color: playlist['color'],
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        Spacer(),
-                                        GestureDetector(
-                                          onTap: () => _showPlaylistDetails(playlist),
-                                          child: Container(
-                                            width: 32,
-                                            height: 32,
-                                            decoration: BoxDecoration(
-                                              color: playlist['color'],
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(
-                                              Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.red,
                               ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _fetchPlaylists,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF6B35),
+                              ),
+                              child: const Text('Réessayer'),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Barre de recherche
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: TextField(
+                                controller: _searchController,
+                                onChanged: _filterPlaylists,
+                                decoration: InputDecoration(
+                                  hintText: 'Rechercher une playlist...',
+                                  hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                  border: InputBorder.none,
+                                  icon: Icon(Icons.search, color: Colors.grey[600], size: 20),
+                                  suffixIcon: _searchController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(Icons.clear, color: Colors.grey[600], size: 18),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            _filterPlaylists('');
+                                          },
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Liste des playlists avec nouveau design
+                            const Text(
+                              'Playlists Podcasts',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+
+                            _filteredPlaylists.isEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(32.0),
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.playlist_remove,
+                                            size: 60,
+                                            color: Colors.grey[400],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Aucune playlist trouvée',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: _filteredPlaylists.length,
+                                    itemBuilder: (context, index) {
+                                      final playlist = _filteredPlaylists[index];
+                                      final imageUrl = playlist['image'] ?? '';
+                                      final hasValidImage = imageUrl.isNotEmpty &&
+                                          (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+
+                                      return Container(
+                                        margin: const EdgeInsets.only(bottom: 16),
+                                        child: Row(
+                                          children: [
+                                            // Image de la playlist
+                                            Container(
+                                              width: 70,
+                                              height: 70,
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(12),
+                                                color: Colors.grey[300],
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.1),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 3),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius: BorderRadius.circular(12),
+                                                child: hasValidImage
+                                                    ? Image.network(
+                                                        imageUrl,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return Icon(
+                                                            Icons.music_note,
+                                                            size: 30,
+                                                            color: Colors.grey[600],
+                                                          );
+                                                        },
+                                                        loadingBuilder: (context, child, loadingProgress) {
+                                                          if (loadingProgress == null) return child;
+                                                          return Center(
+                                                            child: CircularProgressIndicator(
+                                                              value: loadingProgress.expectedTotalBytes != null
+                                                                  ? loadingProgress.cumulativeBytesLoaded /
+                                                                      loadingProgress.expectedTotalBytes!
+                                                                  : null,
+                                                              strokeWidth: 2,
+                                                            ),
+                                                          );
+                                                        },
+                                                      )
+                                                    : Icon(
+                                                        Icons.music_note,
+                                                        size: 30,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+
+                                            // Contenu
+                                            Expanded(
+                                              child: Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.05),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                  border: Border.all(
+                                                    color: Colors.grey[100]!,
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      playlist['title'],
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 16,
+                                                        color: Colors.black87,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      playlist['description'] ?? 'Playlist',
+                                                      style: TextStyle(
+                                                        color: Colors.grey[600],
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    Row(
+                                                      children: [
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(
+                                                              horizontal: 8, vertical: 2),
+                                                          decoration: BoxDecoration(
+                                                            color: const Color(0xFFFF6B35).withOpacity(0.1),
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                          child: Text(
+                                                            '${playlist['episodeCount']} épisode${playlist['episodeCount'] > 1 ? 's' : ''}',
+                                                            style: const TextStyle(
+                                                              color: Color(0xFFFF6B35),
+                                                              fontSize: 12,
+                                                              fontWeight: FontWeight.w600,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const Spacer(),
+                                                        GestureDetector(
+                                                          onTap: () => _showPlaylistDetails(playlist),
+                                                          child: Container(
+                                                            width: 32,
+                                                            height: 32,
+                                                            decoration: BoxDecoration(
+                                                              color: const Color(0xFFFF6B35),
+                                                              borderRadius: BorderRadius.circular(8),
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons.play_arrow,
+                                                              color: Colors.white,
+                                                              size: 18,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ],
+                        ),
+                      ),
           ),
           
-          // Menu hamburger
-          if (_isMenuOpen)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isMenuOpen = false;
-                  });
-                },
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  child: HamburgerMenu(
-                    currentPage: _currentPage,
-                    onPageChange: _changePage,
-                    isMenuOpen: _isMenuOpen,
-                    onMenuToggle: (value) {
-                      setState(() {
-                        _isMenuOpen = value;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
   

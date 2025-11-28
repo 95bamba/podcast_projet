@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
 import 'widgets/hamburger_menu.dart';
-import 'home_page.dart' as home;
-import 'playlist_page.dart';
-import 'favorites_page.dart';
-import 'settings_page.dart';
-import 'about_page.dart';
 import 'login_page.dart';
+import 'bloc/auth/auth_bloc.dart';
+import 'bloc/auth/auth_event.dart';
+import 'bloc/auth/auth_state.dart';
+import 'utils/navigation_helper.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -76,101 +76,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _changePage(String page) {
-    setState(() {
-      _currentPage = page;
-      _isMenuOpen = false;
-    });
-
-    switch (page) {
-      case 'home':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const home.HomePage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'playlist':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const PlaylistPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'favorites':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const FavoritesPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(-1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'profile':
-        // On est déjà sur la page de profil
-        break;
-      case 'settings':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const SettingsPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-      case 'about':
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const AboutPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
-        );
-        break;
-    }
+    NavigationHelper.navigateToPage(context, page, _currentPage);
   }
 
   @override
@@ -346,52 +252,93 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        // Bouton de connexion
-                        Container(
-                          width: double.infinity,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFFFF6B35), Color(0xFFFF8E53)],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0xFFFF6B35).withOpacity(0.3),
-                                blurRadius: 15,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(28),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => LoginPage()),
-                                );
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.login, color: Colors.white, size: 20),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    'Se connecter',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                        // Bouton de déconnexion/connexion basé sur l'état d'authentification
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            final isAuthenticated = state is AuthAuthenticated;
+
+                            return Container(
+                              width: double.infinity,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isAuthenticated
+                                    ? [Color(0xFFE53935), Color(0xFFD32F2F)]
+                                    : [Color(0xFFFF6B35), Color(0xFFFF8E53)],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (isAuthenticated
+                                      ? Color(0xFFE53935)
+                                      : Color(0xFFFF6B35)).withOpacity(0.3),
+                                    blurRadius: 15,
+                                    offset: Offset(0, 5),
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(28),
+                                  onTap: () {
+                                    if (isAuthenticated) {
+                                      // Afficher un dialogue de confirmation
+                                      showDialog(
+                                        context: context,
+                                        builder: (dialogContext) => AlertDialog(
+                                          title: Text('Déconnexion'),
+                                          content: Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(dialogContext),
+                                              child: Text('Annuler'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(dialogContext);
+                                                context.read<AuthBloc>().add(AuthLogoutRequested());
+                                              },
+                                              child: Text(
+                                                'Déconnexion',
+                                                style: TextStyle(color: Colors.red),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => LoginPage()),
+                                      );
+                                    }
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isAuthenticated ? Icons.logout : Icons.login,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        isAuthenticated ? 'Se déconnecter' : 'Se connecter',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
 
                         SizedBox(height: 30),
@@ -548,6 +495,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 _isMenuOpen = value;
               });
             },
+            parentContext: context,
           ),
         ],
       ),

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Autoriser tout le trafic HTTP (pour développement uniquement) -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Configuration spécifique pour le serveur API -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">51.254.204.25</domain>
+    </domain-config>
+</network-security-config>
