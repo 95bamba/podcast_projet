@@ -136,25 +136,14 @@ class AppDrawer extends StatelessWidget {
                   title: 'À propos',
                 ),
 
-                // Admin section (conditional)
-                BlocBuilder<AuthBloc, AuthState>(
-                  builder: (context, state) {
-                    if (state is AuthAuthenticated && state.user?.role == 'admin') {
-                      return Column(
-                        children: [
-                          Divider(height: 1),
-                          _buildSectionHeader('Administration'),
-                          _buildDrawerItem(
-                            context: context,
-                            index: 6,
-                            icon: Icons.admin_panel_settings,
-                            title: 'Administration',
-                          ),
-                        ],
-                      );
-                    }
-                    return SizedBox.shrink();
-                  },
+                // Admin section
+                const Divider(height: 1),
+                _buildSectionHeader('Administration'),
+                _buildDrawerItem(
+                  context: context,
+                  index: 6,
+                  icon: Icons.admin_panel_settings,
+                  title: 'Administration',
                 ),
               ],
             ),

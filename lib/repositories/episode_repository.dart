@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:podcast/models/episode.dart';
 import 'package:podcast/services/api_service.dart';
 
@@ -82,6 +83,43 @@ class EpisodeRepository {
     } catch (e) {
       print('DEBUG: Download error: $e');
       throw Exception('Error downloading audio: $e');
+    }
+  }
+
+  /// Crée un nouvel épisode avec un fichier audio
+  Future<Episode> createEpisode({
+    required String libelle,
+    required String description,
+    required String podcastUuid,
+    required File audioFile,
+  }) async {
+    try {
+      print('DEBUG: Creating episode: $libelle for podcast: $podcastUuid');
+
+      final fields = {
+        'libelle': libelle,
+        'description': description,
+        'podcast_uuid': podcastUuid,
+      };
+
+      final response = await _apiService.uploadFile(
+        '/episode/createEpisode',
+        fields,
+        audioFile,
+        fileFieldName: 'file',
+      );
+
+      print('DEBUG: Create episode response status: ${response.statusCode}');
+      print('DEBUG: Create episode response data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Episode.fromJson(response.data);
+      } else {
+        throw Exception('Failed to create episode: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('DEBUG: Create episode error: $e');
+      throw Exception('Error creating episode: $e');
     }
   }
 }

@@ -161,26 +161,10 @@ class _PlaylistPageState extends State<PlaylistPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Podcasts Playlists',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle, color: Color(0xFFFF6B35)),
-            onPressed: _navigateToCreatePlaylist,
-            tooltip: 'Créer une playlist',
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToCreatePlaylist,
+        backgroundColor: const Color(0xFFFF6B35),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: SafeArea(
             child: _isLoading
@@ -224,6 +208,16 @@ class _PlaylistPageState extends State<PlaylistPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Titre de la page
+                            const Text(
+                              'Podcasts Playlists',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                             // Barre de recherche
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16),

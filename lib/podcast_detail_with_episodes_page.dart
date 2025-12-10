@@ -1,14 +1,17 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:podcast/models/podcast.dart';
 import 'package:podcast/models/episode.dart';
 import 'package:podcast/services/media_service.dart';
-import 'package:podcast/services/api_service.dart';
 import 'package:podcast/bloc/episode/episode_bloc.dart';
 import 'package:podcast/bloc/episode/episode_event.dart';
 import 'package:podcast/bloc/episode/episode_state.dart';
 import 'package:podcast/widgets/audio_controls.dart';
+import 'package:podcast/add_episode_page.dart';
+import 'package:podcast/repositories/episode_repository.dart';
 
 /// Page de détail d'un podcast avec chargement des épisodes et lecture audio
 class PodcastDetailWithEpisodesPage extends StatefulWidget {
@@ -89,6 +92,7 @@ class _PodcastDetailWithEpisodesPageState
     print('\n========== DÉBUT CHARGEMENT AUDIO ==========');
     print('DEBUG: Episode complet: ${episode.toJson()}');
 
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -100,44 +104,27 @@ class _PodcastDetailWithEpisodesPageState
       print('DEBUG: Episode title: ${episode.title}');
       print('DEBUG: Episode audioPath: ${episode.audioPath}');
 
-      // Récupérer le token d'authentification
-      final apiService = context.read<ApiService>();
-      final token = apiService.token;
+      // Télécharger l'audio via le repository (qui gère l'authentification)
+      final episodeRepository = context.read<EpisodeRepository>();
+      print('DEBUG: Téléchargement de l\'audio via le repository...');
 
-      print('DEBUG: Token disponible: ${token != null}');
-      if (token != null) {
-        print('DEBUG: Token (premiers 20 chars): ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
-      }
+      final audioBytes = await episodeRepository.downloadEpisodeAudio(episode.uuid);
+      print('DEBUG: Audio téléchargé: ${audioBytes.length} bytes');
 
-      // Construire l'URL audio à partir de l'UUID du fichier audio de l'épisode
-      // L'API attend l'UUID de l'épisode dans le paramètre uuid
-      // Format: http://51.254.204.25:2000/ged/preview?uuid={episodeUuid}
-      final audioUuid = episode.audioPath ?? episode.uuid;
-      print('DEBUG: Audio UUID utilisé: $audioUuid');
+      // Sauvegarder dans un fichier temporaire
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/episode_${episode.uuid}.mp3');
+      await tempFile.writeAsBytes(audioBytes);
+      print('DEBUG: Fichier temporaire créé: ${tempFile.path}');
 
-      final audioUrl = MediaService.getAudioStreamUrl(audioUuid);
-      print('DEBUG: URL audio construite: $audioUrl');
-
-      if (audioUrl.isEmpty) {
-        throw Exception('Aucun fichier audio disponible pour cet épisode');
-      }
-
-      print('DEBUG: Création de AudioSource...');
-      // Charger l'audio avec les headers d'authentification
-      final audioSource = AudioSource.uri(
-        Uri.parse(audioUrl),
-        headers: token != null ? {
-          'Authorization': 'Bearer $token',
-        } : null,
-      );
-
+      // Charger l'audio depuis le fichier local
       print('DEBUG: Chargement de l\'audio dans le player...');
-      await _audioPlayer.setAudioSource(audioSource);
+      await _audioPlayer.setFilePath(tempFile.path);
 
       print('DEBUG: Démarrage de la lecture...');
-      // Démarrer la lecture
       await _audioPlayer.play();
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -145,6 +132,7 @@ class _PodcastDetailWithEpisodesPageState
       print('DEBUG: ✅ Lecture démarrée avec succès!');
       print('========== FIN CHARGEMENT AUDIO ==========\n');
     } catch (e, stackTrace) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = 'Erreur lors du chargement de l\'audio: $e';
@@ -194,6 +182,26 @@ class _PodcastDetailWithEpisodesPageState
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: Color(0xFFFF6B35)),
+            tooltip: 'Ajouter un épisode',
+            onPressed: () async {
+              final episodeBloc = context.read<EpisodeBloc>();
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddEpisodePage(
+                    podcastUuid: widget.podcast.uuid,
+                    podcastName: widget.podcast.libelle,
+                  ),
+                ),
+              );
+              if (!mounted) return;
+              if (result == true) {
+                episodeBloc.add(EpisodeLoadByPodcastRequested(widget.podcast.uuid));
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {

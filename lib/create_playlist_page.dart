@@ -129,6 +129,28 @@ class _CreatePlaylistPageState extends State<CreatePlaylistPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isLoading ? null : _handleCreatePlaylist,
+        backgroundColor: const Color(0xFFFF6B35),
+        icon: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Icon(Icons.check, color: Colors.white),
+        label: Text(
+          _isLoading ? 'Création...' : 'Créer',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -267,53 +289,7 @@ class _CreatePlaylistPageState extends State<CreatePlaylistPage> {
                     label: 'Description',
                     icon: Icons.description,
                     maxLines: 4,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer une description';
-                      }
-                      if (value.length < 10) {
-                        return 'Minimum 10 caractères';
-                      }
-                      return null;
-                    },
                   ),
-                  const SizedBox(height: 40),
-
-                  // Create Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleCreatePlaylist,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF6B35),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 5,
-                        shadowColor: const Color(0xFFFF6B35).withOpacity(0.3),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Créer la Playlist',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),

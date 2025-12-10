@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:equatable/equatable.dart';
 
 abstract class EpisodeEvent extends Equatable {
@@ -23,4 +24,21 @@ class EpisodeLoadByIdRequested extends EpisodeEvent {
 
   @override
   List<Object?> get props => [episodeUuid];
+}
+
+class EpisodeCreateRequested extends EpisodeEvent {
+  final String libelle;
+  final String description;
+  final String podcastUuid;
+  final File audioFile;
+
+  const EpisodeCreateRequested({
+    required this.libelle,
+    required this.description,
+    required this.podcastUuid,
+    required this.audioFile,
+  });
+
+  @override
+  List<Object?> get props => [libelle, description, podcastUuid, audioFile];
 }

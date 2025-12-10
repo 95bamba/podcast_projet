@@ -38,3 +38,12 @@ class EpisodeError extends EpisodeState {
   @override
   List<Object?> get props => [message];
 }
+
+class EpisodeOperationSuccess extends EpisodeState {
+  final String message;
+
+  const EpisodeOperationSuccess(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

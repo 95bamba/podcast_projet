@@ -35,8 +35,8 @@ class Episode extends Equatable {
       title: json['title'] ?? json['libelle'] ?? '',
       description: json['description'] ?? '',
       podcastUuid: extractPodcastUuid(),
-      // Gérer différents noms de champs pour l'audio: audioPath, audioFileUuid, audio_file_uuid
-      audioPath: json['audioPath'] ?? json['audioFileUuid'] ?? json['audio_file_uuid'],
+      // Gérer différents noms de champs pour l'audio: audioPath, audioFile, audioFileUuid, audio_file_uuid
+      audioPath: json['audioPath'] ?? json['audioFile'] ?? json['audioFileUuid'] ?? json['audio_file_uuid'],
       duration: json['duration']?.toString(),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])

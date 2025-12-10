@@ -9,6 +9,7 @@ class EpisodeBloc extends Bloc<EpisodeEvent, EpisodeState> {
   EpisodeBloc(this._episodeRepository) : super(EpisodeInitial()) {
     on<EpisodeLoadByPodcastRequested>(_onEpisodeLoadByPodcastRequested);
     on<EpisodeLoadByIdRequested>(_onEpisodeLoadByIdRequested);
+    on<EpisodeCreateRequested>(_onEpisodeCreateRequested);
   }
 
   Future<void> _onEpisodeLoadByPodcastRequested(
@@ -32,6 +33,24 @@ class EpisodeBloc extends Bloc<EpisodeEvent, EpisodeState> {
     try {
       final episode = await _episodeRepository.getEpisodeById(event.episodeUuid);
       emit(EpisodeSingleLoaded(episode));
+    } catch (e) {
+      emit(EpisodeError(e.toString()));
+    }
+  }
+
+  Future<void> _onEpisodeCreateRequested(
+    EpisodeCreateRequested event,
+    Emitter<EpisodeState> emit,
+  ) async {
+    emit(EpisodeLoading());
+    try {
+      await _episodeRepository.createEpisode(
+        libelle: event.libelle,
+        description: event.description,
+        podcastUuid: event.podcastUuid,
+        audioFile: event.audioFile,
+      );
+      emit(const EpisodeOperationSuccess('Épisode créé avec succès'));
     } catch (e) {
       emit(EpisodeError(e.toString()));
     }

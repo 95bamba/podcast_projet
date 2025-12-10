@@ -6,6 +6,7 @@ import 'bloc/podcast/podcast_state.dart';
 import 'models/category.dart';
 import 'models/podcast.dart';
 import 'podcast_detail_with_episodes_page.dart';
+import 'add_podcast_page.dart';
 
 class CategoryPodcastsPage extends StatefulWidget {
   final Category category;
@@ -24,6 +25,24 @@ class _CategoryPodcastsPageState extends State<CategoryPodcastsPage> {
     context.read<PodcastBloc>().add(
           PodcastLoadByCategoryRequested(widget.category.uuid),
         );
+  }
+
+  Future<void> _navigateToAddPodcast() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddPodcastPage(
+          preselectedCategory: widget.category,
+        ),
+      ),
+    );
+    // Rafraîchir la liste si un podcast a été créé
+    if (!mounted) return;
+    if (result == true) {
+      context.read<PodcastBloc>().add(
+            PodcastLoadByCategoryRequested(widget.category.uuid),
+          );
+    }
   }
 
   @override
@@ -45,6 +64,11 @@ class _CategoryPodcastsPageState extends State<CategoryPodcastsPage> {
             },
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToAddPodcast(),
+        backgroundColor: Colors.orange,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,12 +1,19 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:podcast/bloc/category/category_bloc.dart';
 import 'package:podcast/bloc/category/category_event.dart';
 import 'package:podcast/bloc/category/category_state.dart';
+import 'package:podcast/bloc/podcast/podcast_bloc.dart';
+import 'package:podcast/bloc/podcast/podcast_event.dart';
+import 'package:podcast/bloc/podcast/podcast_state.dart';
 import 'package:podcast/models/category.dart';
 
 class AddPodcastPage extends StatefulWidget {
-  const AddPodcastPage({super.key});
+  final Category? preselectedCategory;
+
+  const AddPodcastPage({super.key, this.preselectedCategory});
 
   @override
   State<AddPodcastPage> createState() => _AddPodcastPageState();
@@ -19,32 +26,75 @@ class _AddPodcastPageState extends State<AddPodcastPage> {
   final _authorController = TextEditingController();
   final _durationController = TextEditingController();
   Category? _selectedCategory;
-  String? _selectedImage;
+  File? _selectedImageFile;
+  final ImagePicker _imagePicker = ImagePicker();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    // Initialiser avec la catégorie pré-sélectionnée si fournie
+    _selectedCategory = widget.preselectedCategory;
     // Charger les catégories au démarrage
     context.read<CategoryBloc>().add(CategoryLoadRequested());
   }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      // Vérifier qu'une image est sélectionnée
+      if (_selectedImageFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Veuillez sélectionner une image'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Vérifier qu'une catégorie est sélectionnée
+      if (_selectedCategory == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Veuillez sélectionner une catégorie'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        return;
+      }
+
       setState(() {
         _isLoading = true;
       });
 
-      // Simulation d'un traitement
-      await Future.delayed(Duration(seconds: 2));
+      // Appeler l'API via le BLoC
+      context.read<PodcastBloc>().add(
+            PodcastCreateRequested(
+              libelle: _titleController.text,
+              description: _descriptionController.text,
+              categoryUuid: _selectedCategory!.uuid,
+              image: _selectedImageFile!,
+            ),
+          );
+    }
+  }
 
+  void _onPodcastStateChanged(BuildContext context, PodcastState state) {
+    if (state is PodcastOperationSuccess) {
       setState(() {
         _isLoading = false;
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Podcast ajouté avec succès'),
+          content: const Text('Podcast créé avec succès'),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -52,33 +102,62 @@ class _AddPodcastPageState extends State<AddPodcastPage> {
           ),
         ),
       );
-      
-      Navigator.pop(context);
+      Navigator.pop(context, true);
+    } else if (state is PodcastError) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: ${state.message}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
   void _selectImage() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Choisir une image'),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Choisir une image'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.photo_library, color: Color(0xFFFF6B35)),
-              title: Text('Galerie'),
-              onTap: () {
-                // TODO: Implémenter la sélection depuis la galerie
-                Navigator.pop(context);
+              leading: const Icon(Icons.photo_library, color: Color(0xFFFF6B35)),
+              title: const Text('Galerie'),
+              onTap: () async {
+                Navigator.pop(dialogContext);
+                final XFile? image = await _imagePicker.pickImage(
+                  source: ImageSource.gallery,
+                  imageQuality: 80,
+                );
+                if (image != null) {
+                  setState(() {
+                    _selectedImageFile = File(image.path);
+                  });
+                }
               },
             ),
             ListTile(
-              leading: Icon(Icons.camera_alt, color: Color(0xFFFF6B35)),
-              title: Text('Appareil photo'),
-              onTap: () {
-                // TODO: Implémenter la prise de photo
-                Navigator.pop(context);
+              leading: const Icon(Icons.camera_alt, color: Color(0xFFFF6B35)),
+              title: const Text('Appareil photo'),
+              onTap: () async {
+                Navigator.pop(dialogContext);
+                final XFile? image = await _imagePicker.pickImage(
+                  source: ImageSource.camera,
+                  imageQuality: 80,
+                );
+                if (image != null) {
+                  setState(() {
+                    _selectedImageFile = File(image.path);
+                  });
+                }
               },
             ),
           ],
@@ -98,37 +177,40 @@ class _AddPodcastPageState extends State<AddPodcastPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: Text(
-          'Nouveau Podcast',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 20,
+    return BlocListener<PodcastBloc, PodcastState>(
+      listener: _onPodcastStateChanged,
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title: Text(
+            'Nouveau Podcast',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 20,
+            ),
           ),
+          backgroundColor: Color(0xFFFF6B35),
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Colors.white),
         ),
-        backgroundColor: Color(0xFFFF6B35),
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      body: SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(),
-              SizedBox(height: 32),
+        body: SingleChildScrollView(
+          physics: BouncingScrollPhysics(),
+          padding: EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(),
+                SizedBox(height: 32),
 
-              // Formulaire
-              _buildForm(),
-            ],
+                // Formulaire
+                _buildForm(),
+              ],
+            ),
           ),
         ),
       ),
@@ -330,9 +412,6 @@ class _AddPodcastPageState extends State<AddPodcastPage> {
               if (value == null || value.isEmpty) {
                 return 'Veuillez entrer une description';
               }
-              if (value.length < 50) {
-                return 'La description doit contenir au moins 50 caractères';
-              }
               return null;
             },
           ),
@@ -417,11 +496,11 @@ class _AddPodcastPageState extends State<AddPodcastPage> {
                 width: 2,
               ),
             ),
-            child: _selectedImage != null
+            child: _selectedImageFile != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      _selectedImage!,
+                    child: Image.file(
+                      _selectedImageFile!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return _buildImagePlaceholder();
