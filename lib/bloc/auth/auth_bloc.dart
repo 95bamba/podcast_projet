@@ -24,10 +24,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Récupérer le token sauvegardé
       final token = _authService.getToken();
       if (token != null) {
-        // Optionnel : récupérer les infos utilisateur depuis l'API
+        // Récupérer le login utilisateur sauvegardé
+        final savedLogin = await _authService.getSavedUserLogin();
+        User? user;
+        if (savedLogin != null && savedLogin.isNotEmpty) {
+          user = User(
+            login: savedLogin,
+            firstname: '',
+            name: '',
+            email: '',
+          );
+        }
         emit(AuthAuthenticated(
           token: token,
-          user: null, // Sera chargé plus tard si nécessaire
+          user: user,
         ));
       } else {
         emit(AuthUnauthenticated());

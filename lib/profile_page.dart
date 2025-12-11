@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
-import 'widgets/hamburger_menu.dart';
 import 'login_page.dart';
 import 'bloc/auth/auth_bloc.dart';
 import 'bloc/auth/auth_event.dart';
 import 'bloc/auth/auth_state.dart';
-import 'utils/navigation_helper.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,8 +19,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Duration? duration;
   Duration position = Duration.zero;
   
-  String _currentPage = 'profile';
-  bool _isMenuOpen = false;
 
   // Statistiques de l'utilisateur
   final Map<String, dynamic> _userStats = {
@@ -40,23 +36,29 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _initAudioPlayer() async {
     try {
       await _audioPlayer.setUrl('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
-      
+
       _audioPlayer.playerStateStream.listen((state) {
-        setState(() {
-          isPlaying = state.playing;
-        });
+        if (mounted) {
+          setState(() {
+            isPlaying = state.playing;
+          });
+        }
       });
 
       _audioPlayer.durationStream.listen((d) {
-        setState(() {
-          duration = d;
-        });
+        if (mounted) {
+          setState(() {
+            duration = d;
+          });
+        }
       });
 
       _audioPlayer.positionStream.listen((p) {
-        setState(() {
-          position = p;
-        });
+        if (mounted) {
+          setState(() {
+            position = p;
+          });
+        }
       });
     } catch (e) {
       debugPrint('Error initializing audio player: $e');
@@ -75,9 +77,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _changePage(String page) {
-    NavigationHelper.navigateToPage(context, page, _currentPage);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,15 +113,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         // Header Row
                         Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.menu, color: Colors.white, size: 28),
-                              onPressed: () {
-                                setState(() {
-                                  _isMenuOpen = !_isMenuOpen;
-                                });
-                              },
-                            ),
-                            SizedBox(width: 10),
                             Row(
                               children: [
                                 Text("P", style: TextStyle(
@@ -483,19 +473,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-          ),
-          
-          // Menu hamburger
-          HamburgerMenu(
-            currentPage: _currentPage,
-            onPageChange: _changePage,
-            isMenuOpen: _isMenuOpen,
-            onMenuToggle: (value) {
-              setState(() {
-                _isMenuOpen = value;
-              });
-            },
-            parentContext: context,
           ),
         ],
       ),

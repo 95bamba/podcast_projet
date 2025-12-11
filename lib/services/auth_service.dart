@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:podcast/models/user.dart';
 import 'package:podcast/services/api_service.dart';
 
@@ -6,6 +8,35 @@ class AuthService {
   final ApiService _apiService;
 
   AuthService(this._apiService);
+
+  /// Decode JWT token payload to extract user data
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      // Decode the payload (second part)
+      String payload = parts[1];
+      // Add padding if needed for base64 decoding
+      switch (payload.length % 4) {
+        case 1:
+          payload += '===';
+          break;
+        case 2:
+          payload += '==';
+          break;
+        case 3:
+          payload += '=';
+          break;
+      }
+
+      final decoded = utf8.decode(base64Url.decode(payload));
+      return jsonDecode(decoded) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Error decoding JWT: $e');
+      return null;
+    }
+  }
 
   Future<Map<String, dynamic>> login(String login, String password) async {
     try {
@@ -41,15 +72,29 @@ class AuthService {
         await _apiService.setToken(token);
 
         // Gérer le cas où userData peut être null
-        final userData = data['user'];
+        var userData = data['user'];
         User? user;
+
+        // Si pas de userData dans la réponse, essayer de décoder le JWT
+        if (userData == null) {
+          final jwtPayload = _decodeJwtPayload(token);
+          if (jwtPayload != null && jwtPayload['user'] != null) {
+            userData = jwtPayload['user'];
+            debugPrint('User data extracted from JWT: $userData');
+          }
+        }
 
         if (userData != null && userData is Map<String, dynamic>) {
           try {
             user = User.fromJson(userData);
+            // Sauvegarder le login utilisateur pour les sessions futures
+            if (user.login.isNotEmpty) {
+              await _apiService.setUserLogin(user.login);
+              debugPrint('User login saved: ${user.login}');
+            }
           } catch (e) {
+            debugPrint('Error parsing user: $e');
             // Si le parsing échoue, on continue sans user
-            // Log error silently in production
           }
         }
 
@@ -131,6 +176,7 @@ class AuthService {
 
   Future<void> logout() async {
     await _apiService.clearToken();
+    await _apiService.clearUserLogin();
   }
 
   Future<bool> isAuthenticated() async {
@@ -140,5 +186,9 @@ class AuthService {
 
   String? getToken() {
     return _apiService.token;
+  }
+
+  Future<String?> getSavedUserLogin() async {
+    return await _apiService.getUserLogin();
   }
 }

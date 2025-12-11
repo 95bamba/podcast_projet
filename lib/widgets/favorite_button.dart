@@ -71,13 +71,13 @@ class _FavoriteButtonState extends State<FavoriteButton> {
 
     try {
       final isFavorited = await _favoriteService.isFavorited(
-        userLogin: _userLogin!,
+        userUuid: _userLogin!,
         episodeUuid: widget.episodeUuid,
       );
 
       if (isFavorited) {
         final favoriteUuid = await _favoriteService.getFavoriteUuid(
-          userLogin: _userLogin!,
+          userUuid: _userLogin!,
           episodeUuid: widget.episodeUuid,
         );
         setState(() {
@@ -146,7 +146,6 @@ class _FavoriteButtonState extends State<FavoriteButton> {
       } else {
         // Add to favorites
         final result = await _favoriteService.createFavorite(
-          userLogin: _userLogin!,
           episodeUuid: widget.episodeUuid,
         );
 

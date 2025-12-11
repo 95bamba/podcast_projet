@@ -7,16 +7,14 @@ class FavoriteService {
   FavoriteService(this._apiService);
 
   /// Create a new favorite
-  /// Payload: { "user_login": "string", "episode_uuid": "string" }
+  /// Payload: { "episode_uuid": "string" }
   Future<Map<String, dynamic>> createFavorite({
-    required String userLogin,
     required String episodeUuid,
   }) async {
     try {
       final response = await _apiService.post(
         '/favoris/createFavori',
         data: {
-          'user_login': userLogin,
           'episode_uuid': episodeUuid,
         },
       );
@@ -74,12 +72,11 @@ class FavoriteService {
   }
 
   /// Get all favorites for a user
-  /// GET /favoris/getAllFavoris?user_login=xxx
-  Future<Map<String, dynamic>> getAllFavorites(String userLogin) async {
+  /// GET /favoris
+  Future<Map<String, dynamic>> getAllFavorites(String userUuid) async {
     try {
       final response = await _apiService.get(
-        '/favoris/getAllFavoris',
-        queryParameters: {'user_login': userLogin},
+        '/favoris',
       );
 
       if (response.statusCode == 200) {
@@ -268,11 +265,11 @@ class FavoriteService {
   /// Check if an episode is in favorites
   /// Helper method to check if user has favorited an episode
   Future<bool> isFavorited({
-    required String userLogin,
+    required String userUuid,
     required String episodeUuid,
   }) async {
     try {
-      final result = await getAllFavorites(userLogin);
+      final result = await getAllFavorites(userUuid);
 
       if (result['success'] == true && result['favorites'] != null) {
         final List<Favorite> favorites = result['favorites'];
@@ -288,11 +285,11 @@ class FavoriteService {
   /// Get favorite UUID by user and episode
   /// Helper method to find a favorite's UUID
   Future<String?> getFavoriteUuid({
-    required String userLogin,
+    required String userUuid,
     required String episodeUuid,
   }) async {
     try {
-      final result = await getAllFavorites(userLogin);
+      final result = await getAllFavorites(userUuid);
 
       if (result['success'] == true && result['favorites'] != null) {
         final List<Favorite> favorites = result['favorites'];

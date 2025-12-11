@@ -6,9 +6,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:podcast/models/podcast.dart';
 import 'package:podcast/models/episode.dart';
 import 'package:podcast/services/media_service.dart';
+import 'package:podcast/services/api_service.dart';
+import 'package:podcast/services/favorite_service.dart';
 import 'package:podcast/bloc/episode/episode_bloc.dart';
 import 'package:podcast/bloc/episode/episode_event.dart';
 import 'package:podcast/bloc/episode/episode_state.dart';
+import 'package:podcast/bloc/auth/auth_bloc.dart';
+import 'package:podcast/bloc/auth/auth_state.dart';
 import 'package:podcast/widgets/audio_controls.dart';
 import 'package:podcast/add_episode_page.dart';
 import 'package:podcast/repositories/episode_repository.dart';
@@ -37,14 +41,142 @@ class _PodcastDetailWithEpisodesPageState
   String? _errorMessage;
   Episode? _currentEpisode;
 
+  // Favoris
+  late FavoriteService _favoriteService;
+  Set<String> _favoriteEpisodeUuids = {};
+  String? _userUuid;
+
   @override
   void initState() {
     super.initState();
+    _favoriteService = FavoriteService(ApiService());
     _setupAudioPlayer();
     // Charger les épisodes au démarrage
-    context
-        .read<EpisodeBloc>()
-        .add(EpisodeLoadByPodcastRequested(widget.podcast.uuid));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserAndFavorites();
+      context
+          .read<EpisodeBloc>()
+          .add(EpisodeLoadByPodcastRequested(widget.podcast.uuid));
+    });
+  }
+
+  void _loadUserAndFavorites() {
+    final authState = context.read<AuthBloc>().state;
+    debugPrint('AUTH STATE: $authState');
+    if (authState is AuthAuthenticated) {
+      debugPrint('User: ${authState.user}');
+      debugPrint('User login: ${authState.user?.login}');
+      if (authState.user != null && authState.user!.login.isNotEmpty) {
+        _userUuid = authState.user!.login;
+        _loadFavorites();
+      }
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    if (_userUuid == null) return;
+
+    try {
+      final result = await _favoriteService.getAllFavorites(_userUuid!);
+      if (result['success'] == true && result['favorites'] != null) {
+        final favorites = result['favorites'] as List;
+        setState(() {
+          _favoriteEpisodeUuids = favorites
+              .map((f) => f.episodeUuid as String)
+              .toSet();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading favorites: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite(String episodeUuid) async {
+    debugPrint('=== TOGGLE FAVORITE ===');
+    debugPrint('_userUuid: $_userUuid');
+    debugPrint('episodeUuid: $episodeUuid');
+
+    // Re-check auth state if _userUuid is null
+    if (_userUuid == null) {
+      final authState = context.read<AuthBloc>().state;
+      debugPrint('Re-checking auth state: $authState');
+      if (authState is AuthAuthenticated && authState.user != null) {
+        _userUuid = authState.user!.login;
+        debugPrint('Updated _userUuid: $_userUuid');
+      }
+    }
+
+    if (_userUuid == null) {
+      debugPrint('_userUuid is still null - showing error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez vous connecter pour ajouter aux favoris'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final isFavorite = _favoriteEpisodeUuids.contains(episodeUuid);
+
+    try {
+      if (isFavorite) {
+        // Supprimer des favoris
+        final favoriteUuid = await _favoriteService.getFavoriteUuid(
+          userUuid: _userUuid!,
+          episodeUuid: episodeUuid,
+        );
+        if (favoriteUuid != null) {
+          final result = await _favoriteService.deleteFavorite(favoriteUuid);
+          if (!mounted) return;
+          if (result['success'] == true) {
+            setState(() {
+              _favoriteEpisodeUuids.remove(episodeUuid);
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Retiré des favoris'),
+                backgroundColor: Colors.deepOrangeAccent,
+                duration: Duration(seconds: 1),
+              ),
+            );
+          }
+        }
+      } else {
+        // Ajouter aux favoris
+        final result = await _favoriteService.createFavorite(
+          episodeUuid: episodeUuid,
+        );
+        if (!mounted) return;
+        if (result['success'] == true) {
+          setState(() {
+            _favoriteEpisodeUuids.add(episodeUuid);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ajouté aux favoris'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Erreur'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _setupAudioPlayer() {
@@ -478,22 +610,41 @@ class _PodcastDetailWithEpisodesPageState
                                     ),
                                   ),
 
-                                  // Bouton de lecture streaming
-                                  IconButton(
-                                    icon: Icon(
-                                      isCurrentEpisode && _isPlaying
-                                          ? Icons.pause_circle_filled
-                                          : Icons.play_circle_filled,
-                                      size: 40,
-                                      color: const Color(0xFFFF6B35),
-                                    ),
-                                    onPressed: () {
-                                      if (isCurrentEpisode) {
-                                        _togglePlayPause();
-                                      } else {
-                                        _loadAndPlayEpisode(episode);
-                                      }
-                                    },
+                                  // Boutons favori et lecture
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Bouton favori
+                                      IconButton(
+                                        icon: Icon(
+                                          _favoriteEpisodeUuids.contains(episode.uuid)
+                                              ? Icons.favorite
+                                              : Icons.favorite_border,
+                                          size: 28,
+                                          color: _favoriteEpisodeUuids.contains(episode.uuid)
+                                              ? Colors.red
+                                              : Colors.grey,
+                                        ),
+                                        onPressed: () => _toggleFavorite(episode.uuid),
+                                      ),
+                                      // Bouton de lecture streaming
+                                      IconButton(
+                                        icon: Icon(
+                                          isCurrentEpisode && _isPlaying
+                                              ? Icons.pause_circle_filled
+                                              : Icons.play_circle_filled,
+                                          size: 40,
+                                          color: const Color(0xFFFF6B35),
+                                        ),
+                                        onPressed: () {
+                                          if (isCurrentEpisode) {
+                                            _togglePlayPause();
+                                          } else {
+                                            _loadAndPlayEpisode(episode);
+                                          }
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
