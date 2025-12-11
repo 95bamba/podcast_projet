@@ -209,6 +209,65 @@ class ApiService {
     );
   }
 
+  // Multipart upload with bytes (for web support)
+  Future<Response> uploadFileBytes(
+    String path,
+    Map<String, dynamic> fields,
+    List<int> fileBytes,
+    String fileName, {
+    String fileFieldName = 'file',
+    String method = 'POST',
+  }) async {
+    Map<String, dynamic> formDataMap = Map.from(fields);
+
+    // Déterminer le type MIME en fonction de l'extension du fichier
+    String? contentType;
+    final lowerFileName = fileName.toLowerCase();
+
+    if (lowerFileName.endsWith('.jpg') || lowerFileName.endsWith('.jpeg')) {
+      contentType = 'image/jpeg';
+    } else if (lowerFileName.endsWith('.png')) {
+      contentType = 'image/png';
+    } else if (lowerFileName.endsWith('.gif')) {
+      contentType = 'image/gif';
+    } else if (lowerFileName.endsWith('.webp')) {
+      contentType = 'image/webp';
+    } else if (lowerFileName.endsWith('.bmp')) {
+      contentType = 'image/bmp';
+    } else if (lowerFileName.endsWith('.mp3')) {
+      contentType = 'audio/mpeg';
+    } else if (lowerFileName.endsWith('.m4a')) {
+      contentType = 'audio/mp4';
+    } else if (lowerFileName.endsWith('.wav')) {
+      contentType = 'audio/wav';
+    } else if (lowerFileName.endsWith('.aac')) {
+      contentType = 'audio/aac';
+    } else if (lowerFileName.endsWith('.ogg')) {
+      contentType = 'audio/ogg';
+    } else if (lowerFileName.endsWith('.flac')) {
+      contentType = 'audio/flac';
+    }
+
+    formDataMap[fileFieldName] = MultipartFile.fromBytes(
+      fileBytes,
+      filename: fileName,
+      contentType: contentType != null ? MediaType.parse(contentType) : null,
+    );
+
+    FormData formData = FormData.fromMap(formDataMap);
+
+    return await _dio.request(
+      path,
+      data: formData,
+      options: Options(
+        method: method,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+  }
+
   // Playlist Management
   Future<Response> createPlaylist({
     required String libelle,

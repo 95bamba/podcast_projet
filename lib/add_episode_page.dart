@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:podcast/services/api_service.dart';
@@ -19,7 +19,8 @@ class _AddEpisodePageState extends State<AddEpisodePage> {
   final _descriptionController = TextEditingController();
   final _podcastDisplayController = TextEditingController();
 
-  File? _selectedAudioFile;
+  // Pour le web, on utilise les bytes; pour mobile/desktop, on peut utiliser le path
+  Uint8List? _selectedAudioBytes;
   String? _audioFileName;
   bool _isLoading = false;
   final ApiService _apiService = ApiService();
@@ -49,11 +50,12 @@ class _AddEpisodePageState extends State<AddEpisodePage> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['mp3', 'm4a', 'wav', 'aac', 'ogg', 'flac'],
+        withData: true, // Important pour le web - récupérer les bytes
       );
 
-      if (result != null && result.files.single.path != null) {
+      if (result != null && result.files.single.bytes != null) {
         setState(() {
-          _selectedAudioFile = File(result.files.single.path!);
+          _selectedAudioBytes = result.files.single.bytes;
           _audioFileName = result.files.single.name;
         });
       }
@@ -67,7 +69,7 @@ class _AddEpisodePageState extends State<AddEpisodePage> {
       return;
     }
 
-    if (_selectedAudioFile == null) {
+    if (_selectedAudioBytes == null) {
       _showErrorDialog('Veuillez sélectionner un fichier audio');
       return;
     }
@@ -77,14 +79,15 @@ class _AddEpisodePageState extends State<AddEpisodePage> {
     });
 
     try {
-      final response = await _apiService.uploadFile(
+      final response = await _apiService.uploadFileBytes(
         '/episode/createEpisode',
         {
           'libelle': _libelleController.text.trim(),
           'description': _descriptionController.text.trim(),
           'podcast_uuid': _podcastUuid ?? '',
         },
-        _selectedAudioFile,
+        _selectedAudioBytes!,
+        _audioFileName ?? 'audio.mp3',
         fileFieldName: 'file',
         method: 'POST',
       );
@@ -340,20 +343,20 @@ class _AddEpisodePageState extends State<AddEpisodePage> {
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _selectedAudioFile != null
+                        color: _selectedAudioBytes != null
                             ? Color(0xFFFF6B35)
                             : Colors.grey[300]!,
-                        width: _selectedAudioFile != null ? 2 : 1,
+                        width: _selectedAudioBytes != null ? 2 : 1,
                       ),
                     ),
                     child: Column(
                       children: [
                         Icon(
-                          _selectedAudioFile != null
+                          _selectedAudioBytes != null
                               ? Icons.audio_file
                               : Icons.cloud_upload,
                           size: 48,
-                          color: _selectedAudioFile != null
+                          color: _selectedAudioBytes != null
                               ? Color(0xFFFF6B35)
                               : Colors.grey[400],
                         ),
@@ -361,16 +364,16 @@ class _AddEpisodePageState extends State<AddEpisodePage> {
                         Text(
                           _audioFileName ?? 'Cliquez pour sélectionner un fichier audio',
                           style: TextStyle(
-                            color: _selectedAudioFile != null
+                            color: _selectedAudioBytes != null
                                 ? Colors.black87
                                 : Colors.grey[600],
-                            fontWeight: _selectedAudioFile != null
+                            fontWeight: _selectedAudioBytes != null
                                 ? FontWeight.w600
                                 : FontWeight.normal,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        if (_selectedAudioFile != null) ...[
+                        if (_selectedAudioBytes != null) ...[
                           SizedBox(height: 8),
                           Text(
                             'Formats acceptés: MP3, M4A, WAV, AAC, OGG, FLAC',
