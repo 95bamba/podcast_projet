@@ -32,7 +32,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
   @override
   void initState() {
     super.initState();
-    _favoriteService = FavoriteService(ApiService());
     _initAudioPlayer();
     _loadUserAndFavorites();
   }
@@ -40,8 +39,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
   void _loadUserAndFavorites() async {
     // Get user from AuthBloc
     final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated && authState.user != null) {
-      _userLogin = authState.user!.login;
+    if (authState is AuthAuthenticated) {
+      _userLogin = authState.user?.login ?? 'user';
+
+      // Créer ApiService et charger le token
+      final apiService = ApiService();
+      await apiService.loadToken();
+      _favoriteService = FavoriteService(apiService);
+
       await _loadFavoriteEpisodes();
     } else {
       setState(() {
@@ -364,33 +369,35 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       )
                 // Liste des favoris - NOUVEAU DESIGN
                 else if (_filteredFavorites.isEmpty)
-                      Container(
-                        height: 200,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.favorite_border,
-                              size: 64,
-                              color: Colors.grey[300],
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Aucun favori',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[500],
-                                fontWeight: FontWeight.w500,
+                      Center(
+                        child: Container(
+                          height: 300,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.favorite_border,
+                                size: 64,
+                                color: Colors.grey[300],
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Ajoutez des épisodes à vos favoris',
-                              style: TextStyle(
-                                color: Colors.grey[400],
+                              SizedBox(height: 16),
+                              Text(
+                                'Aucun favori',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                          ],
+                              SizedBox(height: 8),
+                              Text(
+                                'Ajoutez des épisodes à vos favoris',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                 else

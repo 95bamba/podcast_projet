@@ -77,6 +77,9 @@ class FavoriteService {
     try {
       final response = await _apiService.get(
         '/favoris',
+        queryParameters: {
+          'join': 'episode',
+        },
       );
 
       if (response.statusCode == 200) {

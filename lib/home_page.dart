@@ -62,7 +62,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Material(
       color: Colors.grey[50],
       child: SafeArea(
         child: CustomScrollView(
